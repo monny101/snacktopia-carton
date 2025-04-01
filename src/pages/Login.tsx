@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Info } from 'lucide-react';
 import { setupAdmin } from '@/utils/setupAdmin';
 import { toast } from '@/hooks/use-toast';
 
@@ -17,6 +17,7 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [setupLoading, setSetupLoading] = useState(false);
+  const [setupSuccess, setSetupSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,7 +44,7 @@ const Login: React.FC = () => {
       if (loginError) {
         console.error("Login error:", loginError);
         if (loginError.message === 'Invalid login credentials') {
-          setError('Invalid email or password. Make sure test users are set up first.');
+          setError('Invalid email or password. Make sure test users are set up first and that email confirmation is disabled in Supabase dashboard.');
         } else {
           setError(loginError.message || 'Invalid email or password');
         }
@@ -62,18 +63,21 @@ const Login: React.FC = () => {
 
   const handleSetupTestUsers = async () => {
     setSetupLoading(true);
+    setError(null);
+    
     try {
       const success = await setupAdmin();
       if (success) {
+        setSetupSuccess(true);
         toast({
           title: "Test users created",
-          description: "Admin and staff test users have been set up. You may need to wait a minute before logging in.",
+          description: "Admin and staff test users have been set up. You need to disable email confirmation in Supabase dashboard to login immediately.",
           duration: 5000,
         });
       } else {
         toast({
-          title: "Error",
-          description: "Failed to create test users. Check console for details.",
+          title: "Warning",
+          description: "There was an issue creating test users. They might already exist, or there might be an error.",
           variant: "destructive",
           duration: 5000,
         });
@@ -189,6 +193,15 @@ const Login: React.FC = () => {
                 'Create Test Users'
               )}
             </Button>
+            {setupSuccess && (
+              <div className="text-xs p-2 bg-blue-50 text-blue-700 rounded flex items-start mt-2">
+                <Info className="h-3 w-3 mr-1 mt-0.5 flex-shrink-0" />
+                <span>
+                  Users created! Important: Go to your Supabase dashboard and disable email confirmation 
+                  in Authentication &gt; Email settings to login immediately.
+                </span>
+              </div>
+            )}
             <p className="text-xs text-gray-500">This will create admin and staff accounts for testing.</p>
           </div>
 
