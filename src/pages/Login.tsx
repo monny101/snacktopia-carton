@@ -4,6 +4,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { setupAdmin } from '@/utils/setupAdmin';
+import { toast } from '@/hooks/use-toast';
 
 const Login: React.FC = () => {
   const { login, isAuthenticated, isLoading } = useAuth();
@@ -14,6 +16,7 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [setupLoading, setSetupLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -39,7 +42,11 @@ const Login: React.FC = () => {
       
       if (loginError) {
         console.error("Login error:", loginError);
-        setError(loginError.message || 'Invalid email or password');
+        if (loginError.message === 'Invalid login credentials') {
+          setError('Invalid email or password. Make sure test users are set up first.');
+        } else {
+          setError(loginError.message || 'Invalid email or password');
+        }
         return;
       }
       
@@ -50,6 +57,37 @@ const Login: React.FC = () => {
       setError(err.message || 'An error occurred during login');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSetupTestUsers = async () => {
+    setSetupLoading(true);
+    try {
+      const success = await setupAdmin();
+      if (success) {
+        toast({
+          title: "Test users created",
+          description: "Admin and staff test users have been set up. You may need to wait a minute before logging in.",
+          duration: 5000,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to create test users. Check console for details.",
+          variant: "destructive",
+          duration: 5000,
+        });
+      }
+    } catch (error) {
+      console.error("Error setting up test users:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Check console for details.",
+        variant: "destructive",
+        duration: 5000,
+      });
+    } finally {
+      setSetupLoading(false);
     }
   };
 
@@ -130,8 +168,32 @@ const Login: React.FC = () => {
             </Button>
           </form>
 
+          {/* Setup test users */}
+          <div className="mt-6 p-3 bg-yellow-50 rounded-md">
+            <p className="text-sm text-gray-700 mb-2 font-medium">First-time Setup</p>
+            <p className="text-xs text-gray-600 mb-2">Before using the test logins, you need to create the test users:</p>
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm"
+              className="w-full mb-2"
+              onClick={handleSetupTestUsers}
+              disabled={setupLoading}
+            >
+              {setupLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                  Setting up users...
+                </>
+              ) : (
+                'Create Test Users'
+              )}
+            </Button>
+            <p className="text-xs text-gray-500">This will create admin and staff accounts for testing.</p>
+          </div>
+
           {/* Login shortcuts for testing */}
-          <div className="mt-6 p-3 bg-gray-50 rounded-md">
+          <div className="mt-4 p-3 bg-gray-50 rounded-md">
             <p className="text-sm text-gray-700 mb-2 font-medium">Quick Login (For Testing)</p>
             <div className="grid grid-cols-2 gap-2">
               <Button 

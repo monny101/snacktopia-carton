@@ -1,157 +1,229 @@
-
 import React, { useEffect, useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { UserCog, ShoppingBag, Package, Users, MapPin, Mail, Phone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, ShoppingBag, Users, MessageSquare, Package } from 'lucide-react';
-import type { Database } from '@/integrations/supabase/types';
-
-interface DashboardStats {
-  totalProducts: number;
-  totalOrders: number;
-  totalCustomers: number;
-  unreadMessages: number;
-}
+import { useAuth } from '@/contexts/AuthContext';
+import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 const AdminDashboard: React.FC = () => {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [salesData, setSalesData] = useState([]);
+  const { profile } = useAuth();
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        // Get total products
-        const { count: totalProducts, error: productsError } = await supabase
-          .from('products')
-          .select('*', { count: 'exact', head: true });
-
-        // Get total orders
-        const { count: totalOrders, error: ordersError } = await supabase
-          .from('orders')
-          .select('*', { count: 'exact', head: true });
-
-        // Get total customers (profiles with role 'customer')
-        const { count: totalCustomers, error: customersError } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true })
-          .eq('role', 'customer');
-
-        // Get unread messages
-        const { count: unreadMessages, error: messagesError } = await supabase
-          .from('chat_messages')
-          .select('*', { count: 'exact', head: true })
-          .eq('is_read', false);
-
-        if (productsError || ordersError || customersError || messagesError) {
-          console.error('Error fetching stats:', { productsError, ordersError, customersError, messagesError });
-          return;
+    // Fetch total products
+    supabase
+      .from('products')
+      .select('*', { count: 'exact' })
+      .then(response => {
+        if (response.error) {
+          console.error('Error fetching products:', response.error);
+        } else {
+          setTotalProducts(response.count || 0);
         }
+      });
 
-        setStats({
-          totalProducts: totalProducts || 0,
-          totalOrders: totalOrders || 0,
-          totalCustomers: totalCustomers || 0,
-          unreadMessages: unreadMessages || 0
-        });
-      } catch (error) {
-        console.error('Error fetching admin dashboard stats:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    // Fetch total orders
+    supabase
+      .from('orders')
+      .select('*', { count: 'exact' })
+      .then(response => {
+        if (response.error) {
+          console.error('Error fetching orders:', response.error);
+        } else {
+          setTotalOrders(response.count || 0);
+        }
+      });
 
-    fetchStats();
+    // Fetch total users
+    supabase
+      .from('profiles')
+      .select('*', { count: 'exact' })
+      .then(response => {
+        if (response.error) {
+          console.error('Error fetching users:', response.error);
+        } else {
+          setTotalUsers(response.count || 0);
+        }
+      });
+
+    // Fetch recent orders (last 5)
+    supabase
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(5)
+      .then(response => {
+        if (response.error) {
+          console.error('Error fetching recent orders:', response.error);
+        } else {
+          setRecentOrders(response.data);
+        }
+      });
+
+    // Fetch sales data (example: last 7 days)
+    const today = new Date();
+    const lastWeek = new Date(today);
+    lastWeek.setDate(today.getDate() - 7);
+
+    supabase
+      .from('orders')
+      .select('created_at, total_amount')
+      .gte('created_at', lastWeek.toISOString())
+      .lte('created_at', today.toISOString())
+      .then(response => {
+        if (response.error) {
+          console.error('Error fetching sales data:', response.error);
+        } else {
+          // Aggregate sales data by date
+          const aggregatedData = response.data.reduce((acc: any, order: any) => {
+            const orderDate = order.created_at.split('T')[0]; // Extract date part
+            if (acc[orderDate]) {
+              acc[orderDate] += order.total_amount;
+            } else {
+              acc[orderDate] = order.total_amount;
+            }
+            return acc;
+          }, {});
+
+          // Convert aggregated data to array format for recharts
+          const salesDataArray = Object.keys(aggregatedData).map(date => ({
+            date,
+            sales: aggregatedData[date],
+          }));
+
+          setSalesData(salesDataArray);
+        }
+      });
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-      </div>
-    );
-  }
-
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="container mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
+
+      {/* Welcome message */}
+      {profile && (
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold">Welcome, {profile.full_name}!</h2>
+          <p className="text-gray-600">Here's a summary of what's happening in your store.</p>
+        </div>
+      )}
+
+      {/* Dashboard Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Total Products</CardTitle>
+          <CardHeader>
+            <CardTitle className="flex items-center"><Package className="mr-2 h-4 w-4 text-gray-500" /> Total Products</CardTitle>
+            <CardDescription>All products available in the store</CardDescription>
           </CardHeader>
-          <CardContent className="flex items-center">
-            <Package className="h-6 w-6 mr-2 text-blue-500" />
-            <div className="text-2xl font-bold">{stats?.totalProducts || 0}</div>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalProducts}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Total Orders</CardTitle>
+          <CardHeader>
+            <CardTitle className="flex items-center"><ShoppingBag className="mr-2 h-4 w-4 text-gray-500" /> Total Orders</CardTitle>
+            <CardDescription>Number of orders placed</CardDescription>
           </CardHeader>
-          <CardContent className="flex items-center">
-            <ShoppingBag className="h-6 w-6 mr-2 text-green-500" />
-            <div className="text-2xl font-bold">{stats?.totalOrders || 0}</div>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalOrders}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Total Customers</CardTitle>
+          <CardHeader>
+            <CardTitle className="flex items-center"><Users className="mr-2 h-4 w-4 text-gray-500" /> Total Users</CardTitle>
+            <CardDescription>Registered users on the platform</CardDescription>
           </CardHeader>
-          <CardContent className="flex items-center">
-            <Users className="h-6 w-6 mr-2 text-indigo-500" />
-            <div className="text-2xl font-bold">{stats?.totalCustomers || 0}</div>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalUsers}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Unread Messages</CardTitle>
+          <CardHeader>
+            <CardTitle className="flex items-center"><UserCog className="mr-2 h-4 w-4 text-gray-500" /> Admin Profile</CardTitle>
+            <CardDescription>Your profile information</CardDescription>
           </CardHeader>
-          <CardContent className="flex items-center">
-            <MessageSquare className="h-6 w-6 mr-2 text-yellow-500" />
-            <div className="text-2xl font-bold text-yellow-500">{stats?.unreadMessages || 0}</div>
+          <CardContent>
+            <div>
+              <p className="text-sm font-medium">
+                <MapPin className="mr-2 inline-block h-4 w-4" /> {profile?.full_name || 'N/A'}
+              </p>
+              <p className="text-sm font-medium">
+                <Mail className="mr-2 inline-block h-4 w-4" /> {profile?.phone || 'N/A'}
+              </p>
+              <p className="text-sm font-medium">
+                <Phone className="mr-2 inline-block h-4 w-4" /> {profile?.role || 'N/A'}
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="mt-8">
-        <h2 className="text-xl font-semibold mb-4">Mondo Carton King</h2>
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-          <h3 className="font-medium mb-4 text-blue-600">Contact Information</h3>
-          <div className="flex flex-col space-y-3">
-            <div className="flex items-start">
-              <MapPin className="h-5 w-5 text-blue-500 mr-3 mt-0.5" />
-              <p>No 50 Okedigo Street Odotu, near Eki FM, Ondo City, Ondo State</p>
-            </div>
-            <div className="flex items-center">
-              <Mail className="h-5 w-5 text-blue-500 mr-3" />
-              <p>mondocartonking@gmail.com</p>
-            </div>
-            <div className="flex items-center">
-              <Phone className="h-5 w-5 text-blue-500 mr-3" />
-              <p>+234 803 580 2867</p>
-            </div>
-          </div>
-          
-          <div className="mt-6 pt-4 border-t border-gray-100">
-            <h4 className="font-medium mb-2 text-gray-700">Store Hours</h4>
-            <ul className="space-y-1">
-              <li className="text-sm text-gray-600 flex justify-between">
-                <span>Monday - Friday</span>
-                <span>8:00 AM - 6:00 PM</span>
-              </li>
-              <li className="text-sm text-gray-600 flex justify-between">
-                <span>Saturday</span>
-                <span>9:00 AM - 5:00 PM</span>
-              </li>
-              <li className="text-sm text-gray-600 flex justify-between">
-                <span>Sunday</span>
-                <span>Closed</span>
-              </li>
-            </ul>
-          </div>
+      {/* Sales Chart */}
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold mb-2">Sales Performance (Last 7 Days)</h2>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={salesData}>
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="sales" fill="#8884d8" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Recent Orders */}
+      <div>
+        <h2 className="text-lg font-semibold mb-2">Recent Orders</h2>
+        <div className="overflow-x-auto">
+          <table className="min-w-full leading-normal">
+            <thead>
+              <tr>
+                <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Order ID
+                </th>
+                <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  User ID
+                </th>
+                <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Total Amount
+                </th>
+                <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Date
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentOrders.map((order: any) => (
+                <tr key={order.id}>
+                  <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    {order.id}
+                  </td>
+                  <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    {order.user_id}
+                  </td>
+                  <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    ${order.total_amount}
+                  </td>
+                  <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    {order.status || 'N/A'}
+                  </td>
+                  <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    {new Date(order.created_at).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
