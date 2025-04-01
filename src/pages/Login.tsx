@@ -34,15 +34,19 @@ const Login: React.FC = () => {
     
     try {
       setLoading(true);
+      console.log("Logging in with:", email);
       const { error: loginError } = await login(email, password);
       
       if (loginError) {
+        console.error("Login error:", loginError);
         setError(loginError.message || 'Invalid email or password');
         return;
       }
       
+      console.log("Login successful, redirecting to:", redirectTo);
       navigate(redirectTo);
     } catch (err: any) {
+      console.error("Unexpected login error:", err);
       setError(err.message || 'An error occurred during login');
     } finally {
       setLoading(false);
@@ -125,6 +129,35 @@ const Login: React.FC = () => {
               )}
             </Button>
           </form>
+
+          {/* Login shortcuts for testing */}
+          <div className="mt-6 p-3 bg-gray-50 rounded-md">
+            <p className="text-sm text-gray-700 mb-2 font-medium">Quick Login (For Testing)</p>
+            <div className="grid grid-cols-2 gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setEmail('admin@mondocartonking.com');
+                  setPassword('password123');
+                }}
+              >
+                Admin Login
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setEmail('staff@mondocartonking.com');
+                  setPassword('password123');
+                }}
+              >
+                Staff Login
+              </Button>
+            </div>
+          </div>
 
           <div className="mt-6 text-center">
             <p className="text-gray-600">

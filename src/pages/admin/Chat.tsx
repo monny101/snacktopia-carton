@@ -5,10 +5,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Send, Search } from 'lucide-react';
+import { Loader2, Send } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import type { Database } from '@/integrations/supabase/types';
+import UserList from '@/components/admin/chat/UserList';
+import AdminChatMessage from '@/components/admin/chat/AdminChatMessage';
 
 type ChatMessage = Database['public']['Tables']['chat_messages']['Row'] & {
   profiles?: {
@@ -59,7 +61,7 @@ const AdminChat: React.FC = () => {
         // Process data to get unique users with their latest message and unread count
         const usersMap = new Map<string, ChatUser>();
         
-        data.forEach((msg: any) => {
+        (data as any).forEach((msg: any) => {
           if (!usersMap.has(msg.user_id)) {
             usersMap.set(msg.user_id, {
               id: msg.user_id,
@@ -222,7 +224,7 @@ const AdminChat: React.FC = () => {
       // Update messages as read
       const { error } = await supabase
         .from('chat_messages')
-        .update({ is_read: true })
+        .update({ is_read: true } as any)
         .eq('user_id', userId)
         .eq('is_read', false);
       
@@ -255,13 +257,13 @@ const AdminChat: React.FC = () => {
       
       const { data, error } = await supabase
         .from('chat_messages')
-        .insert([message])
+        .insert([message as any])
         .select();
       
       if (error) throw error;
       
       // Add message to state
-      setMessages([...messages, data[0] as ChatMessage]);
+      setMessages(prev => [...prev, data[0] as ChatMessage]);
       setNewMessage('');
       scrollToBottom();
       
@@ -271,32 +273,6 @@ const AdminChat: React.FC = () => {
         title: 'Error',
         description: 'Failed to send message',
         variant: 'destructive',
-      });
-    }
-  };
-  
-  const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-  
-  const formatDate = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    if (date.toDateString() === today.toDateString()) {
-      return 'Today';
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday';
-    } else {
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
       });
     }
   };
@@ -314,79 +290,19 @@ const AdminChat: React.FC = () => {
     );
   }
   
-  // Helper function to get the correct display name
-  const getMessageSender = (message: ChatMessage) => {
-    if (!message.staff_id) {
-      return message.profiles?.full_name || 'Customer';
-    }
-    return 'You';
-  };
-  
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Customer Chat Support</h1>
       
       <div className="flex h-[calc(80vh-2rem)] rounded-lg overflow-hidden border">
         {/* User list sidebar */}
-        <div className="w-1/3 border-r flex flex-col">
-          <div className="p-3 border-b">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search customers..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto">
-            {filteredUsers.length > 0 ? (
-              filteredUsers.map((chatUser) => (
-                <div
-                  key={chatUser.id}
-                  className={`p-3 border-b hover:bg-gray-50 cursor-pointer ${
-                    selectedUser?.id === chatUser.id ? 'bg-blue-50' : ''
-                  }`}
-                  onClick={() => setSelectedUser(chatUser)}
-                >
-                  <div className="flex items-center">
-                    <Avatar className="h-10 w-10 mr-3">
-                      <AvatarFallback className="bg-blue-100 text-blue-600">
-                        {chatUser.full_name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-center">
-                        <h3 className="font-medium truncate">{chatUser.full_name}</h3>
-                        {chatUser.latest_message_time && (
-                          <span className="text-xs text-gray-500">
-                            {formatTime(chatUser.latest_message_time)}
-                          </span>
-                        )}
-                      </div>
-                      {chatUser.latest_message && (
-                        <p className="text-sm text-gray-500 truncate">
-                          {chatUser.latest_message}
-                        </p>
-                      )}
-                    </div>
-                    {chatUser.unread > 0 && (
-                      <div className="ml-2 bg-blue-500 text-white text-xs font-medium rounded-full h-5 min-w-5 flex items-center justify-center px-1">
-                        {chatUser.unread}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="p-4 text-center text-gray-500">
-                {searchTerm ? 'No customers found matching your search' : 'No customer chats available'}
-              </div>
-            )}
-          </div>
-        </div>
+        <UserList 
+          users={filteredUsers}
+          selectedUser={selectedUser}
+          onSelectUser={setSelectedUser}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+        />
         
         {/* Chat area */}
         <div className="w-2/3 flex flex-col">
@@ -410,38 +326,15 @@ const AdminChat: React.FC = () => {
                   </div>
                 ) : messages.length > 0 ? (
                   <>
-                    {messages.map((message, index) => {
-                      const isCurrentUser = message.staff_id === user?.id;
-                      const showDateHeader = index === 0 || 
-                        formatDate(messages[index-1].created_at) !== formatDate(message.created_at);
-                      
-                      return (
-                        <React.Fragment key={message.id}>
-                          {showDateHeader && (
-                            <div className="flex justify-center my-2">
-                              <div className="bg-gray-100 text-gray-500 text-xs px-2 py-1 rounded-full">
-                                {formatDate(message.created_at)}
-                              </div>
-                            </div>
-                          )}
-                          
-                          <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[70%] rounded-lg p-3 ${
-                              isCurrentUser 
-                                ? 'bg-blue-500 text-white rounded-br-none' 
-                                : 'bg-gray-100 rounded-bl-none'
-                            }`}>
-                              <p>{message.message}</p>
-                              <p className={`text-xs mt-1 text-right ${
-                                isCurrentUser ? 'text-blue-100' : 'text-gray-500'
-                              }`}>
-                                {formatTime(message.created_at)}
-                              </p>
-                            </div>
-                          </div>
-                        </React.Fragment>
-                      );
-                    })}
+                    {messages.map((message, index) => (
+                      <AdminChatMessage
+                        key={message.id}
+                        message={message}
+                        index={index}
+                        messages={messages}
+                        userId={user?.id || ''}
+                      />
+                    ))}
                     <div ref={messagesEndRef} />
                   </>
                 ) : (

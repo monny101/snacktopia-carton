@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ShoppingBag, Users, MessageSquare, Package } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 interface DashboardStats {
@@ -79,7 +79,8 @@ const AdminDashboard: React.FC = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">Total Products</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex items-center">
+            <Package className="h-6 w-6 mr-2 text-blue-500" />
             <div className="text-2xl font-bold">{stats?.totalProducts || 0}</div>
           </CardContent>
         </Card>
@@ -88,7 +89,8 @@ const AdminDashboard: React.FC = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">Total Orders</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex items-center">
+            <ShoppingBag className="h-6 w-6 mr-2 text-green-500" />
             <div className="text-2xl font-bold">{stats?.totalOrders || 0}</div>
           </CardContent>
         </Card>
@@ -97,7 +99,8 @@ const AdminDashboard: React.FC = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">Total Customers</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex items-center">
+            <Users className="h-6 w-6 mr-2 text-indigo-500" />
             <div className="text-2xl font-bold">{stats?.totalCustomers || 0}</div>
           </CardContent>
         </Card>
@@ -106,7 +109,8 @@ const AdminDashboard: React.FC = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">Unread Messages</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex items-center">
+            <MessageSquare className="h-6 w-6 mr-2 text-yellow-500" />
             <div className="text-2xl font-bold text-yellow-500">{stats?.unreadMessages || 0}</div>
           </CardContent>
         </Card>
@@ -114,11 +118,40 @@ const AdminDashboard: React.FC = () => {
 
       <div className="mt-8">
         <h2 className="text-xl font-semibold mb-4">Mondo Carton King</h2>
-        <div className="bg-white p-4 rounded-lg shadow-sm">
-          <h3 className="font-medium mb-2">Contact Information</h3>
-          <p>Address: No 50 Okedigo Street Odotu, near Eki FM, Ondo City, Ondo State</p>
-          <p>Email: mondo@cartonking.com</p>
-          <p>Phone: +234 803 580 2867</p>
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+          <h3 className="font-medium mb-4 text-blue-600">Contact Information</h3>
+          <div className="flex flex-col space-y-3">
+            <div className="flex items-start">
+              <MapPin className="h-5 w-5 text-blue-500 mr-3 mt-0.5" />
+              <p>No 50 Okedigo Street Odotu, near Eki FM, Ondo City, Ondo State</p>
+            </div>
+            <div className="flex items-center">
+              <Mail className="h-5 w-5 text-blue-500 mr-3" />
+              <p>mondocartonking@gmail.com</p>
+            </div>
+            <div className="flex items-center">
+              <Phone className="h-5 w-5 text-blue-500 mr-3" />
+              <p>+234 803 580 2867</p>
+            </div>
+          </div>
+          
+          <div className="mt-6 pt-4 border-t border-gray-100">
+            <h4 className="font-medium mb-2 text-gray-700">Store Hours</h4>
+            <ul className="space-y-1">
+              <li className="text-sm text-gray-600 flex justify-between">
+                <span>Monday - Friday</span>
+                <span>8:00 AM - 6:00 PM</span>
+              </li>
+              <li className="text-sm text-gray-600 flex justify-between">
+                <span>Saturday</span>
+                <span>9:00 AM - 5:00 PM</span>
+              </li>
+              <li className="text-sm text-gray-600 flex justify-between">
+                <span>Sunday</span>
+                <span>Closed</span>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>

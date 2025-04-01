@@ -3,11 +3,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { MessageSquare, Send, X, ChevronDown, Loader2 } from 'lucide-react';
+import { MessageSquare, X, ChevronDown } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import type { Database } from '@/integrations/supabase/types';
+import ChatWindow from './chat/ChatWindow';
+import ChatInput from './chat/ChatInput';
 
 type ChatMessage = Database['public']['Tables']['chat_messages']['Row'] & {
   profiles?: {
@@ -19,12 +19,10 @@ const CustomerChat: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const chatInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch messages when chat is opened
   useEffect(() => {
@@ -80,15 +78,6 @@ const CustomerChat: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  // Focus input when chat is opened
-  useEffect(() => {
-    if (isOpen && chatInputRef.current) {
-      setTimeout(() => {
-        chatInputRef.current?.focus();
-      }, 300);
-    }
-  }, [isOpen]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -155,7 +144,7 @@ const CustomerChat: React.FC = () => {
     try {
       const { error } = await supabase
         .from('chat_messages')
-        .update({ is_read: true })
+        .update({ is_read: true } as any)
         .eq('user_id', user.id)
         .eq('is_read', false);
       
@@ -169,7 +158,7 @@ const CustomerChat: React.FC = () => {
     try {
       const { error } = await supabase
         .from('chat_messages')
-        .update({ is_read: true })
+        .update({ is_read: true } as any)
         .eq('id', messageId);
       
       if (error) throw error;
@@ -178,9 +167,7 @@ const CustomerChat: React.FC = () => {
     }
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSendMessage = async (message: string) => {
     if (!isAuthenticated) {
       toast({
         title: 'Please login',
@@ -190,26 +177,25 @@ const CustomerChat: React.FC = () => {
       return;
     }
     
-    if (!newMessage.trim() || !user) return;
+    if (!message.trim() || !user) return;
     
     try {
-      const message = {
+      const messageData = {
         user_id: user.id,
         staff_id: null,
-        message: newMessage.trim(),
+        message: message.trim(),
         is_read: false
       };
       
       const { data, error } = await supabase
         .from('chat_messages')
-        .insert([message])
+        .insert([messageData as any])
         .select();
       
       if (error) throw error;
       
       // Add message to state
       setMessages(prev => [...prev, data[0] as ChatMessage]);
-      setNewMessage('');
       scrollToBottom();
       
     } catch (error) {
@@ -222,26 +208,11 @@ const CustomerChat: React.FC = () => {
     }
   };
 
-  const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   const toggleChat = () => {
     setIsOpen(!isOpen);
     if (!isOpen && unreadCount > 0) {
       setUnreadCount(0);
     }
-  };
-
-  // Helper to get display name for staff messages
-  const getDisplayName = (message: ChatMessage) => {
-    if (message.staff_id && message.profiles?.full_name) {
-      return message.profiles.full_name;
-    }
-    return 'Support Staff';
   };
 
   return (
@@ -278,68 +249,20 @@ const CustomerChat: React.FC = () => {
 
           {/* Messages area */}
           <div className="flex-1 overflow-y-auto p-3 space-y-3">
-            {!isAuthenticated ? (
-              <div className="flex justify-center items-center h-full text-center text-gray-500 p-4">
-                Please login to start a conversation with our support team.
-              </div>
-            ) : loading ? (
-              <div className="flex justify-center items-center h-full">
-                <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-              </div>
-            ) : messages.length > 0 ? (
-              <>
-                {messages.map((message) => {
-                  const isFromStaff = !!message.staff_id;
-                  
-                  return (
-                    <div key={message.id} className={`flex ${isFromStaff ? 'justify-start' : 'justify-end'}`}>
-                      {isFromStaff && (
-                        <Avatar className="h-8 w-8 mr-2 mt-1">
-                          <AvatarFallback className="bg-blue-100 text-blue-600">
-                            MS
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                      <div
-                        className={`max-w-[80%] rounded-lg p-2 ${
-                          isFromStaff
-                            ? 'bg-gray-100 rounded-tl-none'
-                            : 'bg-blue-500 text-white rounded-tr-none'
-                        }`}
-                      >
-                        <p className="text-sm">{message.message}</p>
-                        <p className={`text-xs mt-1 text-right ${
-                          isFromStaff ? 'text-gray-500' : 'text-blue-100'
-                        }`}>
-                          {formatTime(message.created_at)}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-                <div ref={messagesEndRef} />
-              </>
-            ) : (
-              <div className="flex justify-center items-center h-full text-center text-gray-500 p-4">
-                No messages yet. Send a message to start a conversation with our support team!
-              </div>
-            )}
+            <ChatWindow 
+              messages={messages}
+              loading={loading}
+              isAuthenticated={isAuthenticated}
+              messagesEndRef={messagesEndRef}
+            />
           </div>
 
           {/* Message input */}
           {isAuthenticated && (
-            <form onSubmit={handleSendMessage} className="p-3 border-t flex gap-2">
-              <Input
-                ref={chatInputRef}
-                placeholder="Type your message..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                className="flex-1"
-              />
-              <Button type="submit" size="sm" disabled={!newMessage.trim()}>
-                <Send className="h-4 w-4" />
-              </Button>
-            </form>
+            <ChatInput 
+              onSendMessage={handleSendMessage} 
+              disabled={!isAuthenticated}
+            />
           )}
         </div>
       )}
