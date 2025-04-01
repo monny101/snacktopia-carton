@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import type { Database } from '@/integrations/supabase/types';
 
 interface DashboardStats {
   totalProducts: number;

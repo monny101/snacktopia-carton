@@ -70,7 +70,7 @@ const orders: Order[] = [
 ];
 
 const Profile: React.FC = () => {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, profile } = useAuth();
   
   // Redirect if not authenticated
   if (!isAuthenticated) {
@@ -82,9 +82,9 @@ const Profile: React.FC = () => {
   
   // Profile form state
   const [profileForm, setProfileForm] = useState({
-    name: user?.name || '',
+    name: profile?.full_name || '',
     email: user?.email || '',
-    phone: '+234 123 4567 890'
+    phone: profile?.phone || '+234 123 4567 890'
   });
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -327,7 +327,7 @@ const Profile: React.FC = () => {
                 <User className="h-6 w-6" />
               </div>
               <div className="ml-3">
-                <p className="font-medium">{user?.name}</p>
+                <p className="font-medium">{profile?.full_name}</p>
                 <p className="text-sm text-gray-500">{user?.email}</p>
               </div>
             </div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,18 +6,13 @@ import { Input } from '@/components/ui/input';
 import { MessageSquare, Send, X, ChevronDown, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import type { Database } from '@/integrations/supabase/types';
 
-interface ChatMessage {
-  id: string;
-  user_id: string;
-  staff_id: string | null;
-  message: string;
-  is_read: boolean;
-  created_at: string;
+type ChatMessage = Database['public']['Tables']['chat_messages']['Row'] & {
   profiles?: {
     full_name: string;
   };
-}
+};
 
 const CustomerChat: React.FC = () => {
   const { user, isAuthenticated } = useAuth();

@@ -4,8 +4,9 @@ import { User, Session } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from '@/hooks/use-toast';
+import { Database } from '@/integrations/supabase/types';
 
-interface UserProfile {
+export interface UserProfile {
   id: string;
   full_name: string | null;
   phone: string | null;
