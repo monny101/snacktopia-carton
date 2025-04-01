@@ -1,12 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 const Login: React.FC = () => {
-  const { login } = useAuth();
+  const { login, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const redirectTo = (location.state as any)?.redirectTo || '/';
@@ -15,6 +15,13 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Redirect if already authenticated
+    if (isAuthenticated && !isLoading) {
+      navigate(redirectTo);
+    }
+  }, [isAuthenticated, isLoading, navigate, redirectTo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,20 +34,35 @@ const Login: React.FC = () => {
     
     try {
       setLoading(true);
-      await login(email, password);
+      const { error: loginError } = await login(email, password);
+      
+      if (loginError) {
+        setError(loginError.message || 'Invalid email or password');
+        return;
+      }
+      
       navigate(redirectTo);
-    } catch (err) {
-      setError('Invalid email or password');
+    } catch (err: any) {
+      setError(err.message || 'An error occurred during login');
     } finally {
       setLoading(false);
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="mr-2 h-8 w-8 animate-spin text-blue-500" />
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-md mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold">Welcome Back</h1>
+          <h1 className="text-3xl font-bold text-blue-600">Welcome Back</h1>
           <p className="text-gray-600 mt-2">Log in to your Mondo Carton King account</p>
         </div>
 
@@ -62,7 +84,7 @@ const Login: React.FC = () => {
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-mondoBlue"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="your@email.com"
                 required
               />
@@ -73,7 +95,7 @@ const Login: React.FC = () => {
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                   Password
                 </label>
-                <a href="#" className="text-sm text-mondoBlue hover:underline">
+                <a href="#" className="text-sm text-blue-600 hover:underline">
                   Forgot password?
                 </a>
               </div>
@@ -82,7 +104,7 @@ const Login: React.FC = () => {
                 id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-mondoBlue"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter your password"
                 required
               />
@@ -90,7 +112,7 @@ const Login: React.FC = () => {
 
             <Button
               type="submit"
-              className="w-full bg-mondoBlue hover:bg-blue-700 h-11 font-medium"
+              className="w-full bg-blue-600 hover:bg-blue-700 h-11 font-medium"
               disabled={loading}
             >
               {loading ? (
@@ -107,7 +129,7 @@ const Login: React.FC = () => {
           <div className="mt-6 text-center">
             <p className="text-gray-600">
               Don't have an account?{' '}
-              <Link to="/register" className="text-mondoBlue hover:underline">
+              <Link to="/register" className="text-blue-600 hover:underline">
                 Create one
               </Link>
             </p>

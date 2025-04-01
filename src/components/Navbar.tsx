@@ -1,191 +1,172 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { useCart } from '@/contexts/CartContext';
+import { 
+  ShoppingCart, Menu, X, User, Package, LogOut, 
+  Settings, ChevronDown
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, User, Search, Menu, X } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const Navbar: React.FC = () => {
-  const { isAuthenticated, user, logout } = useAuth();
-  const { totalItems } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const { isAuthenticated, isAdmin, isStaff, profile, logout } = useAuth();
 
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Implement search functionality
-    console.log('Search for:', searchQuery);
+  const handleLogout = () => {
+    logout();
+    setIsMenuOpen(false);
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white shadow-md">
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex items-center justify-between">
+    <nav className="bg-blue-600 text-white sticky top-0 z-10 shadow-md">
+      <div className="container mx-auto px-4">
+        <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <span className="text-2xl font-bold text-mondoBlue">Mondo</span>
-            <span className="text-2xl font-bold text-mondoYellow">Carton King</span>
-          </Link>
-
-          {/* Search Bar - Hidden on mobile */}
-          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-4">
-            <div className="relative w-full">
-              <input
-                type="text"
-                placeholder="Search for products..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-mondoBlue"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <button 
-                type="submit"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-mondoBlue"
-              >
-                <Search size={20} />
-              </button>
-            </div>
-          </form>
+          <div className="flex items-center">
+            <Link to="/" className="text-xl font-bold flex items-center">
+              <span className="text-yellow-300">Mondo</span>
+              <span className="ml-1">Carton King</span>
+            </Link>
+          </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link to="/products" className="font-medium text-gray-700 hover:text-mondoBlue transition-colors">
-              Shop
-            </Link>
-
+          <div className="hidden md:flex items-center space-x-6">
+            <Link to="/" className="hover:text-yellow-300 transition-colors">Home</Link>
+            <Link to="/products" className="hover:text-yellow-300 transition-colors">Products</Link>
+            
+            {/* Authentication Links */}
             {isAuthenticated ? (
-              <div className="flex items-center space-x-4">
-                <Link to="/profile" className="font-medium text-gray-700 hover:text-mondoBlue transition-colors flex items-center gap-1">
-                  <User size={20} />
-                  <span className="hidden lg:inline">{user?.name}</span>
-                </Link>
-                <Button variant="ghost" onClick={logout}>
-                  Logout
-                </Button>
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="p-0 px-2 text-white hover:text-yellow-300 hover:bg-transparent">
+                    <User className="mr-1 h-4 w-4" />
+                    {profile?.full_name && profile.full_name.split(' ')[0]}
+                    <ChevronDown className="ml-1 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="cursor-pointer">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/cart" className="cursor-pointer">
+                      <ShoppingCart className="mr-2 h-4 w-4" />
+                      <span>Cart</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  
+                  {/* Admin/Staff Links */}
+                  {(isAdmin || isStaff) && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Administration</DropdownMenuLabel>
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin" className="cursor-pointer">
+                          <Settings className="mr-2 h-4 w-4" />
+                          <span>Admin Panel</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
-              <div className="flex items-center space-x-4">
-                <Link to="/login" className="font-medium text-gray-700 hover:text-mondoBlue transition-colors">
-                  Login
-                </Link>
+              <>
+                <Link to="/login" className="hover:text-yellow-300 transition-colors">Login</Link>
                 <Link to="/register">
-                  <Button variant="default" className="bg-mondoBlue hover:bg-blue-700">
+                  <Button className="bg-yellow-500 hover:bg-yellow-600 text-blue-900 font-medium">
                     Sign Up
                   </Button>
                 </Link>
-              </div>
+              </>
             )}
-
+            
+            {/* Cart Link (always visible) */}
             <Link to="/cart" className="relative">
-              <ShoppingCart size={24} className="text-gray-700 hover:text-mondoBlue transition-colors" />
-              {totalItems > 0 && (
-                <span className="absolute -top-2 -right-2 bg-mondoYellow text-mondoBlue text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                  {totalItems}
-                </span>
-              )}
+              <ShoppingCart className="h-6 w-6 hover:text-yellow-300 transition-colors" />
+              {/* You can add a cart count badge here if needed */}
             </Link>
-          </nav>
+          </div>
 
-          {/* Mobile Menu Toggle */}
-          <div className="flex md:hidden items-center space-x-4">
-            <Link to="/cart" className="relative">
-              <ShoppingCart size={24} className="text-gray-700" />
-              {totalItems > 0 && (
-                <span className="absolute -top-2 -right-2 bg-mondoYellow text-mondoBlue text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                  {totalItems}
-                </span>
-              )}
+          {/* Mobile menu button */}
+          <div className="md:hidden flex items-center">
+            <Link to="/cart" className="mr-4 relative">
+              <ShoppingCart className="h-6 w-6" />
+              {/* You can add a cart count badge here if needed */}
             </Link>
-            <button onClick={toggleMenu} className="text-gray-700">
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            <button
+              onClick={toggleMenu}
+              className="text-white hover:text-yellow-300 focus:outline-none"
+            >
+              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
         </div>
-
-        {/* Mobile Search - Visible Only on Mobile */}
-        <form onSubmit={handleSearch} className="mt-4 md:hidden">
-          <div className="relative w-full">
-            <input
-              type="text"
-              placeholder="Search for products..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-mondoBlue"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button 
-              type="submit"
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-mondoBlue"
-            >
-              <Search size={20} />
-            </button>
-          </div>
-        </form>
-
-        {/* Mobile Menu - Visible Only When Toggled */}
-        {isMenuOpen && (
-          <nav className="mt-4 md:hidden">
-            <ul className="flex flex-col space-y-4 pb-4">
-              <li>
-                <Link 
-                  to="/products" 
-                  className="block font-medium text-gray-700 hover:text-mondoBlue"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Shop
-                </Link>
-              </li>
-              {isAuthenticated ? (
-                <>
-                  <li>
-                    <Link 
-                      to="/profile" 
-                      className="block font-medium text-gray-700 hover:text-mondoBlue"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      My Account
-                    </Link>
-                  </li>
-                  <li>
-                    <button 
-                      onClick={() => {
-                        logout();
-                        setIsMenuOpen(false);
-                      }}
-                      className="block font-medium text-gray-700 hover:text-mondoBlue"
-                    >
-                      Logout
-                    </button>
-                  </li>
-                </>
-              ) : (
-                <>
-                  <li>
-                    <Link 
-                      to="/login" 
-                      className="block font-medium text-gray-700 hover:text-mondoBlue"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Login
-                    </Link>
-                  </li>
-                  <li>
-                    <Link 
-                      to="/register" 
-                      className="block font-medium text-gray-700 hover:text-mondoBlue"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Sign Up
-                    </Link>
-                  </li>
-                </>
-              )}
-            </ul>
-          </nav>
-        )}
       </div>
-    </header>
+
+      {/* Mobile menu */}
+      <div className={`md:hidden ${isMenuOpen ? 'block' : 'hidden'}`}>
+        <div className="px-4 pt-2 pb-4 space-y-3 bg-blue-700">
+          <Link to="/" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
+            Home
+          </Link>
+          <Link to="/products" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
+            Products
+          </Link>
+          
+          {isAuthenticated ? (
+            <>
+              <Link to="/profile" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
+                Profile
+              </Link>
+              {(isAdmin || isStaff) && (
+                <Link to="/admin" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
+                  Admin Panel
+                </Link>
+              )}
+              <button 
+                onClick={handleLogout} 
+                className="block w-full text-left hover:text-yellow-300"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
+                Login
+              </Link>
+              <Link to="/register" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
+                Sign Up
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
+    </nav>
   );
 };
 

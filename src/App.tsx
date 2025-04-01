@@ -8,6 +8,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 import Layout from "@/components/Layout";
+import AdminLayout from "@/components/AdminLayout";
 import Home from "@/pages/Home";
 import Products from "@/pages/Products";
 import ProductDetails from "@/pages/ProductDetails";
@@ -18,6 +19,16 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Profile from "@/pages/Profile";
 import NotFound from "@/pages/NotFound";
+
+// Admin pages
+import AdminDashboard from "@/pages/admin/Dashboard";
+import AdminProducts from "@/pages/admin/Products";
+import AdminOrders from "@/pages/admin/Orders";
+import AdminChat from "@/pages/admin/Chat";
+import AdminUsers from "@/pages/admin/Users";
+
+// Customer Chat Component
+import CustomerChat from "@/components/CustomerChat";
 
 const queryClient = new QueryClient();
 
@@ -42,7 +53,17 @@ const App = () => (
                 <Route path="profile" element={<Profile />} />
                 <Route path="*" element={<NotFound />} />
               </Route>
+              
+              {/* Admin Routes */}
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="products" element={<AdminProducts />} />
+                <Route path="orders" element={<AdminOrders />} />
+                <Route path="chat" element={<AdminChat />} />
+                <Route path="users" element={<AdminUsers />} />
+              </Route>
             </Routes>
+            <CustomerChat />
           </BrowserRouter>
         </TooltipProvider>
       </CartProvider>
