@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -110,7 +111,8 @@ const CustomerChat: React.FC = () => {
       
       if (error) throw error;
       
-      setMessages(data as ChatMessage[]);
+      // Cast as any first to avoid TypeScript errors with the profiles join
+      setMessages((data as any) || []);
       
       // Reset unread count and mark messages as read
       setUnreadCount(0);
@@ -206,7 +208,7 @@ const CustomerChat: React.FC = () => {
       if (error) throw error;
       
       // Add message to state
-      setMessages([...messages, data[0] as ChatMessage]);
+      setMessages(prev => [...prev, data[0] as ChatMessage]);
       setNewMessage('');
       scrollToBottom();
       
@@ -232,6 +234,14 @@ const CustomerChat: React.FC = () => {
     if (!isOpen && unreadCount > 0) {
       setUnreadCount(0);
     }
+  };
+
+  // Helper to get display name for staff messages
+  const getDisplayName = (message: ChatMessage) => {
+    if (message.staff_id && message.profiles?.full_name) {
+      return message.profiles.full_name;
+    }
+    return 'Support Staff';
   };
 
   return (

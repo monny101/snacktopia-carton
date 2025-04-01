@@ -8,18 +8,13 @@ import { Separator } from '@/components/ui/separator';
 import { Loader2, Send, Search } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import type { Database } from '@/integrations/supabase/types';
 
-interface ChatMessage {
-  id: string;
-  user_id: string;
-  staff_id: string | null;
-  message: string;
-  is_read: boolean;
-  created_at: string;
+type ChatMessage = Database['public']['Tables']['chat_messages']['Row'] & {
   profiles?: {
     full_name: string;
   };
-}
+};
 
 interface ChatUser {
   id: string;
@@ -204,7 +199,8 @@ const AdminChat: React.FC = () => {
       
       if (error) throw error;
       
-      setMessages(data as ChatMessage[]);
+      // Cast as any first to avoid TypeScript errors with the profiles join
+      setMessages((data as any) || []);
       
       // Mark messages as read
       markMessagesAsRead(userId);
@@ -317,6 +313,14 @@ const AdminChat: React.FC = () => {
       </div>
     );
   }
+  
+  // Helper function to get the correct display name
+  const getMessageSender = (message: ChatMessage) => {
+    if (!message.staff_id) {
+      return message.profiles?.full_name || 'Customer';
+    }
+    return 'You';
+  };
   
   return (
     <div>
