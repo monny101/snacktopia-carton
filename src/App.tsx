@@ -1,9 +1,9 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useRoutes } from "react-router-dom";
+import routes from "tempo-routes";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 
@@ -32,6 +32,11 @@ import CustomerChat from "@/components/CustomerChat";
 
 const queryClient = new QueryClient();
 
+// Component to handle Tempo routes
+const TempoRoutes = () => {
+  return import.meta.env.VITE_TEMPO ? useRoutes(routes) : null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -40,6 +45,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <TempoRoutes />
             <Routes>
               <Route path="/" element={<Layout />}>
                 <Route index element={<Home />} />
@@ -47,13 +53,20 @@ const App = () => (
                 <Route path="products/:id" element={<ProductDetails />} />
                 <Route path="cart" element={<Cart />} />
                 <Route path="checkout" element={<Checkout />} />
-                <Route path="order-confirmation" element={<OrderConfirmation />} />
+                <Route
+                  path="order-confirmation"
+                  element={<OrderConfirmation />}
+                />
                 <Route path="login" element={<Login />} />
                 <Route path="register" element={<Register />} />
                 <Route path="profile" element={<Profile />} />
+                {/* Add this before the catchall route */}
+                {import.meta.env.VITE_TEMPO && (
+                  <Route path="/tempobook/*" element={<></>} />
+                )}
                 <Route path="*" element={<NotFound />} />
               </Route>
-              
+
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />

@@ -1,61 +1,80 @@
-
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2, AlertCircle } from "lucide-react";
 
 const Register: React.FC = () => {
   const { signup, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Redirect if already authenticated
     if (isAuthenticated && !isLoading) {
-      navigate('/');
+      navigate("/");
     }
   }, [isAuthenticated, isLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     // Validate form
     if (!fullName || !email || !password) {
-      setError('Please fill all required fields');
+      setError("Please fill all required fields");
       return;
     }
-    
+
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       return;
     }
-    
+
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError("Password must be at least 6 characters");
       return;
     }
-    
+
     try {
       setLoading(true);
-      const { error: signupError } = await signup(email, password, fullName, phone);
-      
+      console.log("Attempting signup with:", email, fullName);
+      const { error: signupError } = await signup(
+        email,
+        password,
+        fullName,
+        phone,
+      );
+
       if (signupError) {
-        setError(signupError.message || 'Error creating account');
+        console.error("Signup error:", signupError);
+        if (signupError.message.includes("already registered")) {
+          setError("This email is already registered. Please log in instead.");
+        } else if (signupError.message.includes("Email confirmation")) {
+          setError(
+            "Account created! Please check your email for confirmation or disable email confirmation in Supabase dashboard.",
+          );
+        } else {
+          setError(signupError.message || "Error creating account");
+        }
         return;
       }
-      
-      navigate('/');
+
+      console.log("Signup successful, redirecting to home");
+      // Add a small delay to ensure profile is created
+      setTimeout(() => {
+        navigate("/");
+      }, 500);
     } catch (err: any) {
-      setError(err.message || 'An error occurred during registration');
+      console.error("Unexpected signup error:", err);
+      setError(err.message || "An error occurred during registration");
     } finally {
       setLoading(false);
     }
@@ -74,7 +93,9 @@ const Register: React.FC = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-md mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-blue-600">Create an Account</h1>
+          <h1 className="text-3xl font-bold text-blue-600">
+            Create an Account
+          </h1>
           <p className="text-gray-600 mt-2">Join Mondo Carton King today</p>
         </div>
 
@@ -88,7 +109,10 @@ const Register: React.FC = () => {
 
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="fullName"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Full Name <span className="text-red-500">*</span>
               </label>
               <input
@@ -103,7 +127,10 @@ const Register: React.FC = () => {
             </div>
 
             <div className="mb-4">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Email Address <span className="text-red-500">*</span>
               </label>
               <input
@@ -118,7 +145,10 @@ const Register: React.FC = () => {
             </div>
 
             <div className="mb-4">
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="phone"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Phone Number
               </label>
               <input
@@ -132,7 +162,10 @@ const Register: React.FC = () => {
             </div>
 
             <div className="mb-4">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Password <span className="text-red-500">*</span>
               </label>
               <input
@@ -147,7 +180,10 @@ const Register: React.FC = () => {
             </div>
 
             <div className="mb-6">
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Confirm Password <span className="text-red-500">*</span>
               </label>
               <input
@@ -172,14 +208,14 @@ const Register: React.FC = () => {
                   Creating Account...
                 </>
               ) : (
-                'Create Account'
+                "Create Account"
               )}
             </Button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-gray-600">
-              Already have an account?{' '}
+              Already have an account?{" "}
               <Link to="/login" className="text-blue-600 hover:underline">
                 Log in
               </Link>
