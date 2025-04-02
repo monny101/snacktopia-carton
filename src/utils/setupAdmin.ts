@@ -2,23 +2,23 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export const setupAdmin = async () => {
-  // Ensure environment variables are set
-  const adminEmail = process.env.ADMIN_EMAIL;
-  const adminPassword = process.env.ADMIN_PASSWORD;
-  const staffEmail = process.env.STAFF_EMAIL;
-  const staffPassword = process.env.STAFF_PASSWORD;
-
-  if (!adminEmail || !adminPassword || !staffEmail || !staffPassword) {
-    console.error(
-      "Missing required environment variables: ADMIN_EMAIL, ADMIN_PASSWORD, STAFF_EMAIL, STAFF_PASSWORD"
-    );
-    return false;
-  }
-
   try {
     console.log("Starting admin/staff user setup...");
 
-    // First, try to create admin user
+    // Check if the profiles table exists, if not, create it
+    const { error: tableCheckError } = await supabase
+      .from('profiles')
+      .select('count')
+      .limit(1)
+      .single();
+    
+    if (tableCheckError && tableCheckError.code === 'PGRST116') {
+      console.log('Profiles table may not exist. Please make sure it is created with the correct columns.');
+    }
+
+    // Try to create admin user
+    const adminEmail = 'admin@mondocartonking.com';
+    const adminPassword = 'password123';
     const { data: adminData, error: adminError } = await supabase.auth.signUp({
       email: adminEmail,
       password: adminPassword,
@@ -35,13 +35,15 @@ export const setupAdmin = async () => {
         console.log('Admin user already exists');
       } else {
         console.error('Failed to create admin user:', adminError);
-        return false;
+        // Continue to try creating staff user even if admin creation fails
       }
     } else {
-      console.log('Admin user created successfully:', adminData);
+      console.log('Admin user created successfully');
     }
     
-    // Then, try to create staff user
+    // Try to create staff user
+    const staffEmail = 'staff@mondocartonking.com';
+    const staffPassword = 'password123';
     const { data: staffData, error: staffError } = await supabase.auth.signUp({
       email: staffEmail,
       password: staffPassword,
@@ -58,13 +60,21 @@ export const setupAdmin = async () => {
         console.log('Staff user already exists');
       } else {
         console.error('Failed to create staff user:', staffError);
-        return false;
+        // Continue processing
       }
     } else {
-      console.log('Staff user created successfully:', staffData);
+      console.log('Staff user created successfully');
     }
     
-    return true;
+    // At least one user was created successfully or already exists
+    if (
+      (!adminError || adminError.message.includes('already registered')) ||
+      (!staffError || staffError.message.includes('already registered'))
+    ) {
+      return true;
+    }
+    
+    return false;
   } catch (error) {
     console.error('Error setting up admin/staff users:', error);
     return false;

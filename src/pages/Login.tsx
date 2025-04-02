@@ -1,10 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, AlertCircle, Info } from 'lucide-react';
+import { Loader2, AlertCircle, Info, Mail, Lock } from 'lucide-react';
 import { setupAdmin } from '@/utils/setupAdmin';
 import { toast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const Login: React.FC = () => {
   const { login, isAuthenticated, isLoading } = useAuth();
@@ -43,7 +48,7 @@ const Login: React.FC = () => {
       if (loginError) {
         console.error("Login error:", loginError);
         if (loginError.message === 'Invalid login credentials') {
-          setError('Invalid email or password. Ensure test users are set up and email confirmation is disabled in Supabase dashboard.');
+          setError('Invalid email or password. Make sure email confirmation is disabled in Supabase dashboard or the account has been confirmed.');
         } else {
           setError(loginError.message || 'Invalid email or password');
         }
@@ -70,7 +75,7 @@ const Login: React.FC = () => {
         setSetupSuccess(true);
         toast({
           title: "Test users created",
-          description: "Admin and staff test users have been set up. Disable email confirmation in Supabase dashboard to login immediately.",
+          description: "Admin and staff test users have been set up. Please disable email confirmation in Supabase dashboard to login immediately.",
           duration: 5000,
         });
       } else {
@@ -104,55 +109,59 @@ const Login: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-md mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-blue-600">Welcome Back</h1>
-          <p className="text-gray-600 mt-2">Log in to your Mondo Carton King account</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="container mx-auto px-4 py-12 max-w-md">
+      <Card className="w-full shadow-lg border-blue-100">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold text-center text-blue-600">Welcome Back</CardTitle>
+          <CardDescription className="text-center">
+            Log in to your Mondo Carton King account
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
           {error && (
-            <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-md flex items-center">
-              <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
-              <p>{error}</p>
-            </div>
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
 
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="your@email.com"
-                required
-              />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10"
+                  placeholder="your@email.com"
+                  required
+                />
+              </div>
             </div>
 
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-1">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  Password
-                </label>
-                <a href="#" className="text-sm text-blue-600 hover:underline">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link to="#" className="text-xs text-blue-600 hover:underline">
                   Forgot password?
-                </a>
+                </Link>
               </div>
-              <input
-                type="password"
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your password"
-                required
-              />
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10"
+                  placeholder="Enter your password"
+                  required
+                />
+              </div>
             </div>
 
             <Button
@@ -171,9 +180,18 @@ const Login: React.FC = () => {
             </Button>
           </form>
 
-          <div className="mt-6 p-3 bg-yellow-50 rounded-md">
-            <p className="text-sm text-gray-700 mb-2 font-medium">First-time Setup</p>
-            <p className="text-xs text-gray-600 mb-2">Before using test logins, create test users. Note: Disable email confirmation in Supabase dashboard.</p>
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-gray-200" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-gray-500">Or</span>
+            </div>
+          </div>
+
+          <div className="p-4 bg-yellow-50 rounded-md border border-yellow-100">
+            <h3 className="text-sm text-gray-700 mb-2 font-medium">First-time Setup</h3>
+            <p className="text-xs text-gray-600 mb-2">Before using test logins, create test users and disable email confirmation in Supabase.</p>
             <Button 
               type="button" 
               variant="outline" 
@@ -192,18 +210,18 @@ const Login: React.FC = () => {
               )}
             </Button>
             {setupSuccess && (
-              <div className="text-xs p-2 bg-blue-50 text-blue-700 rounded flex items-start mt-2">
-                <Info className="h-3 w-3 mr-1 mt-0.5 flex-shrink-0" />
-                <span>
+              <Alert variant="info" className="mt-2 py-2 bg-blue-50 border-blue-100">
+                <Info className="h-4 w-4" />
+                <AlertDescription className="text-xs">
                   Users created! Go to Supabase dashboard and disable email confirmation 
                   in Authentication &gt; Email settings to login immediately.
-                </span>
-              </div>
+                </AlertDescription>
+              </Alert>
             )}
           </div>
 
-          <div className="mt-4 p-3 bg-gray-50 rounded-md">
-            <p className="text-sm text-gray-700 mb-2 font-medium">Quick Login (For Testing)</p>
+          <div className="bg-gray-50 p-4 rounded-md border border-gray-100">
+            <h3 className="text-sm text-gray-700 mb-2 font-medium">Quick Login (For Testing)</h3>
             <div className="grid grid-cols-2 gap-2">
               <Button 
                 type="button" 
@@ -229,17 +247,16 @@ const Login: React.FC = () => {
               </Button>
             </div>
           </div>
-
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
-              Don't have an account?{' '}
-              <Link to="/register" className="text-blue-600 hover:underline">
-                Create one
-              </Link>
-            </p>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+        <CardFooter className="flex justify-center">
+          <p className="text-sm text-gray-600">
+            Don't have an account?{' '}
+            <Link to="/register" className="text-blue-600 hover:underline font-medium">
+              Create one
+            </Link>
+          </p>
+        </CardFooter>
+      </Card>
     </div>
   );
 };

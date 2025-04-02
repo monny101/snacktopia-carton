@@ -50,6 +50,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('Error fetching user profile:', error);
+        
+        // Try to create the profile if it doesn't exist and we have user metadata
+        if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
+          try {
+            const { data: metaData } = await supabase.auth.getUser();
+            if (metaData.user) {
+              const userData = metaData.user.user_metadata;
+              const newProfile = {
+                id: userId,
+                full_name: userData.full_name || metaData.user.email?.split('@')[0] || null,
+                phone: userData.phone || null,
+                role: userData.role || 'customer',
+              };
+              
+              const { error: insertError } = await supabase
+                .from('profiles')
+                .insert([newProfile]);
+                
+              if (!insertError) {
+                setProfile(newProfile as UserProfile);
+                console.log('Created missing profile:', newProfile);
+                return;
+              }
+            }
+          } catch (createError) {
+            console.error('Error creating missing profile:', createError);
+          }
+        }
+        
+        // Set a default profile if we can't fetch or create one
+        const defaultProfile: UserProfile = {
+          id: userId,
+          full_name: user?.email?.split('@')[0] || null,
+          phone: null,
+          role: 'customer',
+        };
+        setProfile(defaultProfile);
         return;
       }
 
@@ -57,6 +94,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setProfile(data as UserProfile);
     } catch (err) {
       console.error('Unexpected error fetching profile:', err);
+      // Set default profile on error
+      const defaultProfile: UserProfile = {
+        id: userId,
+        full_name: user?.email?.split('@')[0] || null,
+        phone: null,
+        role: 'customer',
+      };
+      setProfile(defaultProfile);
     }
   };
 
