@@ -2,13 +2,26 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export const setupAdmin = async () => {
+  // Ensure environment variables are set
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  const staffEmail = process.env.STAFF_EMAIL;
+  const staffPassword = process.env.STAFF_PASSWORD;
+
+  if (!adminEmail || !adminPassword || !staffEmail || !staffPassword) {
+    console.error(
+      "Missing required environment variables: ADMIN_EMAIL, ADMIN_PASSWORD, STAFF_EMAIL, STAFF_PASSWORD"
+    );
+    return false;
+  }
+
   try {
     console.log("Starting admin/staff user setup...");
-    
+
     // First, try to create admin user
     const { data: adminData, error: adminError } = await supabase.auth.signUp({
-      email: 'admin@mondocartonking.com',
-      password: 'password123',
+      email: adminEmail,
+      password: adminPassword,
       options: {
         data: {
           full_name: 'Admin User',
@@ -30,8 +43,8 @@ export const setupAdmin = async () => {
     
     // Then, try to create staff user
     const { data: staffData, error: staffError } = await supabase.auth.signUp({
-      email: 'staff@mondocartonking.com',
-      password: 'password123',
+      email: staffEmail,
+      password: staffPassword,
       options: {
         data: {
           full_name: 'Staff User',
