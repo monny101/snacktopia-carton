@@ -42,6 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Fetch user profile
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log("Fetching profile for user ID:", userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -64,13 +65,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 role: userData.role || 'customer',
               };
               
+              console.log("Creating missing profile:", newProfile);
               const { error: insertError } = await supabase
                 .from('profiles')
                 .insert([newProfile]);
                 
-              if (!insertError) {
+              if (insertError) {
+                console.error('Error inserting profile:', insertError);
+              } else {
+                console.log('Profile created successfully');
                 setProfile(newProfile as UserProfile);
-                console.log('Created missing profile:', newProfile);
                 return;
               }
             }
@@ -165,6 +169,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signup = async (email: string, password: string, fullName: string, phone?: string) => {
     try {
+      console.log("Attempting to sign up user:", email);
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -177,7 +183,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Signup error:", error);
+        throw error;
+      }
+      
+      console.log("User signed up successfully:", data);
+      
+      // Check if we need to manually create a profile (happens if trigger fails)
+      if (data.user) {
+        // Give a small delay to allow trigger to work first
+        setTimeout(async () => {
+          const { data: profileCheck } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user?.id || '')
+            .single();
+            
+          if (!profileCheck) {
+            console.log("Creating profile manually after signup");
+            await supabase.from('profiles').insert({
+              id: data.user.id,
+              full_name: fullName,
+              phone: phone || null,
+              role: 'customer'
+            });
+          }
+        }, 1000);
+      }
       
       toast({
         title: "Account created successfully",

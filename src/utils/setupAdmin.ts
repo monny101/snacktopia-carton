@@ -45,8 +45,13 @@ export const setupAdmin = async () => {
           console.log('Admin profile may not exist yet, attempting to create it manually');
           
           // Try to get admin user ID
-          const { data: userData } = await supabase.auth.admin.listUsers();
-          const adminUser = userData?.users?.find(u => u.email === adminEmail);
+          const { data } = await supabase.auth.admin.listUsers();
+          
+          // Safely access the users array
+          const users = data?.users || [];
+          const adminUser = users.find(u => {
+            return u.email === adminEmail;
+          });
           
           if (adminUser?.id) {
             // Manually create admin profile if needed
@@ -96,8 +101,13 @@ export const setupAdmin = async () => {
           console.log('Staff profile may not exist yet, attempting to create it manually');
           
           // Try to get staff user ID
-          const { data: userData } = await supabase.auth.admin.listUsers();
-          const staffUser = userData?.users?.find(u => u.email === staffEmail);
+          const { data } = await supabase.auth.admin.listUsers();
+          
+          // Safely access the users array
+          const users = data?.users || [];
+          const staffUser = users.find(u => {
+            return u.email === staffEmail;
+          });
           
           if (staffUser?.id) {
             // Manually create staff profile if needed
