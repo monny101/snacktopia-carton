@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, Home } from "lucide-react";
 
 const Register: React.FC = () => {
   const { signup, isAuthenticated, isLoading } = useAuth();
@@ -213,11 +213,20 @@ const Register: React.FC = () => {
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center space-y-4">
             <p className="text-gray-600">
               Already have an account?{" "}
               <Link to="/login" className="text-blue-600 hover:underline">
                 Log in
+              </Link>
+            </p>
+            <p>
+              <Link
+                to="/"
+                className="text-gray-500 hover:text-gray-700 text-sm flex items-center justify-center"
+              >
+                <Home className="h-3 w-3 mr-1" />
+                Back to Home
               </Link>
             </p>
           </div>

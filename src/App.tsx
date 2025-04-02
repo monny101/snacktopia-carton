@@ -2,10 +2,19 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useRoutes } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  useRoutes,
+  useLocation,
+  Navigate,
+} from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import routes from "tempo-routes";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 import Layout from "@/components/Layout";
 import AdminLayout from "@/components/AdminLayout";
@@ -35,6 +44,31 @@ const queryClient = new QueryClient();
 // Component to handle Tempo routes
 const TempoRoutes = () => {
   return import.meta.env.VITE_TEMPO ? useRoutes(routes) : null;
+};
+
+// Component to handle protected admin routes
+const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, isAdmin, isLoading } = useAuth();
+  const location = useLocation();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        <p className="ml-2">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ redirectTo: location.pathname }} />;
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/" />;
+  }
+
+  return <>{children}</>;
 };
 
 const App = () => (
@@ -67,8 +101,15 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Route>
 
-              {/* Admin Routes */}
-              <Route path="/admin" element={<AdminLayout />}>
+              {/* Admin Routes - Protected */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedAdminRoute>
+                    <AdminLayout />
+                  </ProtectedAdminRoute>
+                }
+              >
                 <Route index element={<AdminDashboard />} />
                 <Route path="products" element={<AdminProducts />} />
                 <Route path="orders" element={<AdminOrders />} />

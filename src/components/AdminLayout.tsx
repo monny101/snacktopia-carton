@@ -1,5 +1,5 @@
 import React from "react";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet, useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   SidebarProvider,
@@ -23,8 +23,8 @@ import {
   MessageSquare,
   Users,
   LogOut,
+  Home,
 } from "lucide-react";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 const AdminLayout: React.FC = () => {
@@ -52,6 +52,16 @@ const AdminLayout: React.FC = () => {
     return <Navigate to="/" />;
   }
 
+  // If we're still loading, don't redirect yet
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        <p className="ml-2">Loading...</p>
+      </div>
+    );
+  }
+
   const handleLogout = () => {
     logout();
   };
@@ -62,8 +72,10 @@ const AdminLayout: React.FC = () => {
         <Sidebar>
           <SidebarHeader className="border-b border-blue-100">
             <div className="p-2">
-              <h2 className="text-xl font-bold text-blue-600">Mondo Admin</h2>
-              <p className="text-xs text-gray-500">Administration Panel</p>
+              <Link to="/admin" className="block">
+                <h2 className="text-xl font-bold text-blue-600">Mondo Admin</h2>
+                <p className="text-xs text-gray-500">Administration Panel</p>
+              </Link>
             </div>
           </SidebarHeader>
           <SidebarContent>
@@ -113,7 +125,16 @@ const AdminLayout: React.FC = () => {
               </SidebarMenu>
             </SidebarGroup>
           </SidebarContent>
-          <SidebarFooter className="border-t border-blue-100 p-4">
+          <SidebarFooter className="border-t border-blue-100 p-4 space-y-2">
+            <Link to="/" className="block w-full">
+              <Button
+                variant="secondary"
+                className="w-full flex items-center justify-center gap-2"
+              >
+                <Home className="h-4 w-4" />
+                <span>Back to Store</span>
+              </Button>
+            </Link>
             <Button
               variant="outline"
               className="w-full flex items-center justify-center gap-2"

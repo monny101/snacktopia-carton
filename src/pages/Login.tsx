@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2, AlertCircle, Info } from "lucide-react";
+import { Loader2, AlertCircle, Info, Home } from "lucide-react";
 import { setupAdmin } from "@/utils/setupAdmin";
 import { toast } from "@/hooks/use-toast";
 
@@ -11,6 +11,7 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const redirectTo = (location.state as any)?.redirectTo || "/";
+  console.log("Login page loaded, redirect path:", redirectTo);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -262,11 +263,20 @@ const Login: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center space-y-4">
             <p className="text-gray-600">
               Don't have an account?{" "}
               <Link to="/register" className="text-blue-600 hover:underline">
                 Create one
+              </Link>
+            </p>
+            <p>
+              <Link
+                to="/"
+                className="text-gray-500 hover:text-gray-700 text-sm flex items-center justify-center"
+              >
+                <Home className="h-3 w-3 mr-1" />
+                Back to Home
               </Link>
             </p>
           </div>
