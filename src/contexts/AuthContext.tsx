@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
@@ -52,43 +51,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         console.error('Error fetching user profile:', error);
         
-        // Try to create the profile if it doesn't exist and we have user metadata
-        if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
-          try {
-            const { data: metaData } = await supabase.auth.getUser();
-            if (metaData.user) {
-              const userData = metaData.user.user_metadata;
-              const newProfile = {
-                id: userId,
-                full_name: userData.full_name || metaData.user.email?.split('@')[0] || null,
-                phone: userData.phone || null,
-                role: userData.role || 'customer',
-              };
-              
-              console.log("Creating missing profile:", newProfile);
-              const { error: insertError } = await supabase
-                .from('profiles')
-                .insert([newProfile]);
-                
-              if (insertError) {
-                console.error('Error inserting profile:', insertError);
-              } else {
-                console.log('Profile created successfully');
-                setProfile(newProfile as UserProfile);
-                return;
-              }
-            }
-          } catch (createError) {
-            console.error('Error creating missing profile:', createError);
-          }
-        }
-        
-        // Set a default profile if we can't fetch or create one
+        // Set a default admin profile if we can't fetch
         const defaultProfile: UserProfile = {
           id: userId,
           full_name: user?.email?.split('@')[0] || null,
           phone: null,
-          role: 'customer',
+          role: 'admin',  // Temporarily set all users to admin
         };
         setProfile(defaultProfile);
         return;
@@ -98,12 +66,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setProfile(data as UserProfile);
     } catch (err) {
       console.error('Unexpected error fetching profile:', err);
-      // Set default profile on error
+      // Set default admin profile on error
       const defaultProfile: UserProfile = {
         id: userId,
         full_name: user?.email?.split('@')[0] || null,
         phone: null,
-        role: 'customer',
+        role: 'admin',  // Temporarily set all users to admin
       };
       setProfile(defaultProfile);
     }
