@@ -190,26 +190,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log("User signed up successfully:", data);
       
-      // Check if we need to manually create a profile (happens if trigger fails)
+      // Create profile immediately to ensure it exists
       if (data.user) {
-        // Give a small delay to allow trigger to work first
-        setTimeout(async () => {
-          const { data: profileCheck } = await supabase
+        // First check if profile already exists
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+          
+        if (!existingProfile) {
+          console.log("Creating profile immediately after signup");
+          const { error: profileError } = await supabase
             .from('profiles')
-            .select('*')
-            .eq('id', data.user?.id || '')
-            .single();
-            
-          if (!profileCheck) {
-            console.log("Creating profile manually after signup");
-            await supabase.from('profiles').insert({
+            .insert({
               id: data.user.id,
               full_name: fullName,
               phone: phone || null,
               role: 'customer'
             });
+            
+          if (profileError) {
+            console.error("Error creating profile during signup:", profileError);
+          } else {
+            console.log("Profile created successfully during signup");
           }
-        }, 1000);
+        }
+        
+        // Fetch the user's profile after signup (or creating it)
+        fetchUserProfile(data.user.id);
       }
       
       toast({

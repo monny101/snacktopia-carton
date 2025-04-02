@@ -47,10 +47,11 @@ export const setupAdmin = async () => {
           // Try to get admin user ID
           const { data } = await supabase.auth.admin.listUsers();
           
-          // Safely access the users array
+          // Safely access the users array and handle potential undefined
           const users = data?.users || [];
           const adminUser = users.find(u => {
-            return u.email === adminEmail;
+            // Safely check if email property exists before using it
+            return u && typeof u === 'object' && 'email' in u && u.email === adminEmail;
           });
           
           if (adminUser?.id) {
@@ -103,10 +104,11 @@ export const setupAdmin = async () => {
           // Try to get staff user ID
           const { data } = await supabase.auth.admin.listUsers();
           
-          // Safely access the users array
+          // Safely access the users array and handle potential undefined
           const users = data?.users || [];
           const staffUser = users.find(u => {
-            return u.email === staffEmail;
+            // Safely check if email property exists before using it
+            return u && typeof u === 'object' && 'email' in u && u.email === staffEmail;
           });
           
           if (staffUser?.id) {

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { toast } from '@/hooks/use-toast';
 
 const Register: React.FC = () => {
   const { signup, isAuthenticated, isLoading } = useAuth();
@@ -55,10 +56,22 @@ const Register: React.FC = () => {
       if (signupError) {
         console.error("Registration error:", signupError);
         setError(signupError.message || 'Error creating account');
+        
+        // Display more user-friendly messages for common errors
+        if (signupError.message?.includes('already registered')) {
+          setError('This email is already registered. Please log in instead.');
+        } else if (signupError.message?.includes('User registration is disabled')) {
+          setError('Registration is currently disabled. Please try again later or contact support.');
+        }
         return;
       }
       
       console.log("Registration successful, redirecting...");
+      toast({
+        title: "Registration successful",
+        description: "Your account has been created",
+        duration: 3000,
+      });
       navigate('/');
     } catch (err: any) {
       console.error("Unexpected registration error:", err);
