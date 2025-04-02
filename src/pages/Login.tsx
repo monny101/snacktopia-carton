@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -25,7 +24,6 @@ const Login: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Redirect if already authenticated
     if (isAuthenticated && !isLoading) {
       navigate(redirectTo);
     }
@@ -210,7 +208,7 @@ const Login: React.FC = () => {
               )}
             </Button>
             {setupSuccess && (
-              <Alert variant="info" className="mt-2 py-2 bg-blue-50 border-blue-100">
+              <Alert variant="default" className="mt-2 py-2 bg-blue-50 border-blue-100">
                 <Info className="h-4 w-4" />
                 <AlertDescription className="text-xs">
                   Users created! Go to Supabase dashboard and disable email confirmation 
