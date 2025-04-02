@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ShoppingCart,
@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
+import { useIsMobile } from "@/hooks/use-media-query";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +29,7 @@ const Navbar: React.FC = () => {
   const { isAuthenticated, isAdmin, isStaff, profile, logout } = useAuth();
   const { totalItems } = useCart();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -43,9 +45,16 @@ const Navbar: React.FC = () => {
     setIsMenuOpen(false);
   };
 
+  // Close mobile menu when switching to desktop view
+  useEffect(() => {
+    if (!isMobile && isMenuOpen) {
+      setIsMenuOpen(false);
+    }
+  }, [isMobile, isMenuOpen]);
+
   return (
     <nav className="bg-blue-600 text-white sticky top-0 z-10 shadow-md">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 max-w-screen-xl">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center">
@@ -56,7 +65,7 @@ const Navbar: React.FC = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-6">
+          <div className="hidden md:flex items-center space-x-4 lg:space-x-6">
             <Link to="/" className="hover:text-yellow-300 transition-colors">
               Home
             </Link>
@@ -129,7 +138,7 @@ const Navbar: React.FC = () => {
                   Login
                 </Link>
                 <Link to="/register">
-                  <Button className="bg-yellow-500 hover:bg-yellow-600 text-blue-900 font-medium">
+                  <Button className="bg-yellow-500 hover:bg-yellow-600 text-blue-900 font-medium whitespace-nowrap">
                     Sign Up
                   </Button>
                 </Link>

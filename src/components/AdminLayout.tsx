@@ -149,7 +149,7 @@ const AdminLayout: React.FC = () => {
           <div className="p-4 flex">
             <SidebarTrigger className="mr-2" />
             <div className="flex-1 ml-2">
-              <div className="bg-white rounded-lg shadow-sm p-4 min-h-[calc(100vh-2rem)]">
+              <div className="bg-white rounded-lg shadow-sm p-4 min-h-[calc(100vh-2rem)] overflow-x-auto">
                 <Outlet />
               </div>
             </div>

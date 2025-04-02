@@ -33,7 +33,7 @@ const NavigationBreadcrumb: React.FC = () => {
   if (pathSegments.length === 0) return null;
 
   return (
-    <div className="container mx-auto px-4 py-2">
+    <div className="container mx-auto px-4 py-2 max-w-screen-xl overflow-x-auto">
       <nav className="flex" aria-label="Breadcrumb">
         <ol className="flex items-center space-x-2">
           {/* Home link */}
