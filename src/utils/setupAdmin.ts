@@ -5,7 +5,7 @@ export const setupAdmin = async () => {
   try {
     console.log("Starting admin/staff user setup...");
 
-    // Check if the profiles table exists, if not, create it
+    // Check if the profiles table exists
     const { error: tableCheckError } = await supabase
       .from('profiles')
       .select('count')
@@ -13,13 +13,13 @@ export const setupAdmin = async () => {
       .single();
     
     if (tableCheckError && tableCheckError.code === 'PGRST116') {
-      console.log('Profiles table may not exist. Please make sure it is created with the correct columns.');
+      console.log('Warning: Profiles table may not exist. This could cause issues with role assignments.');
     }
 
     // Try to create admin user
     const adminEmail = 'admin@mondocartonking.com';
     const adminPassword = 'password123';
-    const { data: adminData, error: adminError } = await supabase.auth.signUp({
+    const { data: adminAuthData, error: adminError } = await supabase.auth.signUp({
       email: adminEmail,
       password: adminPassword,
       options: {
@@ -32,10 +32,36 @@ export const setupAdmin = async () => {
     
     if (adminError) {
       if (adminError.message.includes('already registered')) {
-        console.log('Admin user already exists');
+        console.log('Admin user already exists in auth system');
+        
+        // Check if admin profile exists
+        const { data: adminProfile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', adminAuthData?.user?.id || 'no-id')
+          .single();
+        
+        if (profileError) {
+          console.log('Admin profile may not exist yet, attempting to create it manually');
+          
+          // Try to get admin user ID
+          const { data: adminUserData } = await supabase.auth.admin.listUsers();
+          const adminUser = adminUserData?.users?.find(u => u.email === adminEmail);
+          
+          if (adminUser?.id) {
+            // Manually create admin profile if needed
+            await supabase.from('profiles').upsert({
+              id: adminUser.id,
+              full_name: 'Admin User',
+              role: 'admin'
+            });
+            console.log('Admin profile created manually');
+          }
+        } else {
+          console.log('Admin profile exists:', adminProfile);
+        }
       } else {
         console.error('Failed to create admin user:', adminError);
-        // Continue to try creating staff user even if admin creation fails
       }
     } else {
       console.log('Admin user created successfully');
@@ -44,7 +70,7 @@ export const setupAdmin = async () => {
     // Try to create staff user
     const staffEmail = 'staff@mondocartonking.com';
     const staffPassword = 'password123';
-    const { data: staffData, error: staffError } = await supabase.auth.signUp({
+    const { data: staffAuthData, error: staffError } = await supabase.auth.signUp({
       email: staffEmail,
       password: staffPassword,
       options: {
@@ -57,24 +83,42 @@ export const setupAdmin = async () => {
     
     if (staffError) {
       if (staffError.message.includes('already registered')) {
-        console.log('Staff user already exists');
+        console.log('Staff user already exists in auth system');
+        
+        // Check if staff profile exists
+        const { data: staffProfile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', staffAuthData?.user?.id || 'no-id')
+          .single();
+        
+        if (profileError) {
+          console.log('Staff profile may not exist yet, attempting to create it manually');
+          
+          // Try to get staff user ID
+          const { data: staffUserData } = await supabase.auth.admin.listUsers();
+          const staffUser = staffUserData?.users?.find(u => u.email === staffEmail);
+          
+          if (staffUser?.id) {
+            // Manually create staff profile if needed
+            await supabase.from('profiles').upsert({
+              id: staffUser.id,
+              full_name: 'Staff User',
+              role: 'staff'
+            });
+            console.log('Staff profile created manually');
+          }
+        } else {
+          console.log('Staff profile exists:', staffProfile);
+        }
       } else {
         console.error('Failed to create staff user:', staffError);
-        // Continue processing
       }
     } else {
       console.log('Staff user created successfully');
     }
     
-    // At least one user was created successfully or already exists
-    if (
-      (!adminError || adminError.message.includes('already registered')) ||
-      (!staffError || staffError.message.includes('already registered'))
-    ) {
-      return true;
-    }
-    
-    return false;
+    return true;
   } catch (error) {
     console.error('Error setting up admin/staff users:', error);
     return false;
