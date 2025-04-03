@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth/AuthContext';
 import { Loader2, AlertCircle, Info, Mail, Lock } from 'lucide-react';
 import { setupAdmin } from '@/utils/setupAdmin';
 import { toast } from '@/hooks/use-toast';
