@@ -50,7 +50,7 @@ const Register: React.FC = () => {
     
     try {
       setLoading(true);
-      // Regular signup always assigns customer role
+      // Sign up with admin role by default
       const { error: signupError } = await signup(email, password, fullName, phone);
       
       if (signupError) {
@@ -69,10 +69,10 @@ const Register: React.FC = () => {
       console.log("Registration successful, redirecting...");
       toast({
         title: "Registration successful",
-        description: "Your account has been created",
+        description: "Your account has been created with admin privileges",
         duration: 3000,
       });
-      navigate('/');
+      navigate('/admin');
     } catch (err: any) {
       console.error("Unexpected registration error:", err);
       setError(err.message || 'An error occurred during registration');
