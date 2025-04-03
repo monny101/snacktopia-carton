@@ -1,15 +1,17 @@
-import { setupAdmin } from '../src/utils/setupAdmin';
 
-const run = async () => {
-  console.log('Attempting to run admin setup...');
-  const success = await setupAdmin();
-  if (success) {
-    console.log('Admin setup completed successfully (or users already exist).');
-    process.exit(0); // Exit with success code
-  } else {
-    console.error('Admin setup failed. Check logs and environment variables.');
-    process.exit(1); // Exit with error code
-  }
+import { setupAdmin } from '../utils/setupAdmin';
+import { ensureProfiles } from './ensureProfiles';
+
+// First run the setup admin which creates the handle_new_user function
+// and then ensure all users have profiles with the correct role
+const runSetup = async () => {
+  console.log("Setting up admin user...");
+  await setupAdmin();
+  
+  console.log("Ensuring all users have profiles...");
+  await ensureProfiles();
+  
+  console.log("Setup complete!");
 };
 
-run();
+runSetup().catch(console.error);

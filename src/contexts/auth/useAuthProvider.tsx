@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
