@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth/AuthContext';
 import { Loader2, AlertCircle, User, Mail, Phone, Lock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -50,7 +50,7 @@ const Register: React.FC = () => {
     
     try {
       setLoading(true);
-      console.log("Registering with:", email, fullName);
+      // Regular signup always assigns customer role
       const { error: signupError } = await signup(email, password, fullName, phone);
       
       if (signupError) {

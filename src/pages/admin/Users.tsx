@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, ArrowUp, ArrowDown, Loader2 } from 'lucide-react';
+import { Search, ArrowUp, ArrowDown, Loader2, Shield, Clock } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -22,6 +21,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/auth/AuthContext';
 
 interface UserProfile {
   id: string;
@@ -32,6 +32,7 @@ interface UserProfile {
 }
 
 const AdminUsers: React.FC = () => {
+  const { profile: currentUserProfile } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,7 +43,13 @@ const AdminUsers: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [selectedRole, setSelectedRole] = useState<'admin' | 'staff' | 'customer'>('customer');
   
-  // Fetch users
+  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserRole, setNewUserRole] = useState<'admin' | 'staff'>('staff');
+  const [newUserPhone, setNewUserPhone] = useState('');
+  const [creatingUser, setCreatingUser] = useState(false);
+  
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -70,7 +77,6 @@ const AdminUsers: React.FC = () => {
     fetchUsers();
   }, [sortField, sortDirection]);
   
-  // Handle sort toggle
   const handleSort = (field: string) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -80,7 +86,6 @@ const AdminUsers: React.FC = () => {
     }
   };
   
-  // Format date
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB', {
       day: '2-digit',
@@ -89,15 +94,15 @@ const AdminUsers: React.FC = () => {
     });
   };
   
-  // Filter users based on search term
   const filteredUsers = users.filter(user => {
+    if (user.id === currentUserProfile?.id) return false;
+    
     const nameMatch = user.full_name?.toLowerCase().includes(searchTerm.toLowerCase());
     const phoneMatch = user.phone?.toLowerCase().includes(searchTerm.toLowerCase());
     
     return nameMatch || phoneMatch;
   });
   
-  // Update user role
   const handleUpdateRole = async () => {
     if (!selectedUser) return;
     
@@ -109,7 +114,15 @@ const AdminUsers: React.FC = () => {
       
       if (error) throw error;
       
-      // Update local state
+      const { error: authError } = await supabase.auth.admin.updateUserById(
+        selectedUser.id,
+        { user_metadata: { role: selectedRole } }
+      );
+      
+      if (authError) {
+        console.error('Error updating user metadata:', authError);
+      }
+      
       setUsers(users.map(u => 
         u.id === selectedUser.id ? { ...u, role: selectedRole } : u
       ));
@@ -130,6 +143,82 @@ const AdminUsers: React.FC = () => {
     }
   };
   
+  const handleCreateUser = async () => {
+    if (!newUserEmail || !newUserName) {
+      toast({
+        title: 'Validation Error',
+        description: 'Email and name are required',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    try {
+      setCreatingUser(true);
+      
+      const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).toUpperCase().slice(-4) + '!';
+      
+      const { data, error } = await supabase.auth.admin.createUser({
+        email: newUserEmail,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: {
+          full_name: newUserName,
+          phone: newUserPhone,
+          role: newUserRole
+        }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: data.user.id,
+            full_name: newUserName,
+            phone: newUserPhone || null,
+            role: newUserRole
+          });
+          
+        if (profileError) {
+          console.error('Error creating profile:', profileError);
+          throw profileError;
+        }
+        
+        const { data: updatedUsers } = await supabase
+          .from('profiles')
+          .select('*')
+          .order(sortField, { ascending: sortDirection === 'asc' });
+          
+        if (updatedUsers) {
+          setUsers(updatedUsers as UserProfile[]);
+        }
+        
+        setIsCreateUserOpen(false);
+        
+        setNewUserEmail('');
+        setNewUserName('');
+        setNewUserPhone('');
+        setNewUserRole('staff');
+        
+        toast({
+          title: 'User Created Successfully',
+          description: `Temporary password: ${tempPassword}`,
+        });
+      }
+    } catch (error: any) {
+      console.error('Error creating user:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create user',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreatingUser(false);
+    }
+  };
+  
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -142,6 +231,7 @@ const AdminUsers: React.FC = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Manage Users</h1>
+        <Button onClick={() => setIsCreateUserOpen(true)}>Create Staff/Admin</Button>
       </div>
       
       <div className="mb-4">
@@ -251,7 +341,6 @@ const AdminUsers: React.FC = () => {
         </div>
       </div>
       
-      {/* Edit Role Dialog */}
       <Dialog open={isEditRoleOpen} onOpenChange={setIsEditRoleOpen}>
         <DialogContent>
           <DialogHeader>
@@ -294,6 +383,96 @@ const AdminUsers: React.FC = () => {
               <Button variant="outline">Cancel</Button>
             </DialogClose>
             <Button onClick={handleUpdateRole}>Update Role</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isCreateUserOpen} onOpenChange={setIsCreateUserOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Staff/Admin Account</DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newUserEmail">Email Address *</Label>
+              <Input
+                id="newUserEmail"
+                value={newUserEmail}
+                onChange={(e) => setNewUserEmail(e.target.value)}
+                placeholder="email@example.com"
+                type="email"
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="newUserName">Full Name *</Label>
+              <Input
+                id="newUserName"
+                value={newUserName}
+                onChange={(e) => setNewUserName(e.target.value)}
+                placeholder="Full Name"
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="newUserPhone">Phone Number</Label>
+              <Input
+                id="newUserPhone"
+                value={newUserPhone}
+                onChange={(e) => setNewUserPhone(e.target.value)}
+                placeholder="Phone Number (optional)"
+                type="tel"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="newUserRole">Role *</Label>
+              <Select value={newUserRole} onValueChange={(value: any) => setNewUserRole(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="staff">
+                    <div className="flex items-center">
+                      <Clock className="mr-2 h-4 w-4" />
+                      <span>Staff</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="admin">
+                    <div className="flex items-center">
+                      <Shield className="mr-2 h-4 w-4" />
+                      <span>Admin</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500 mt-1">
+                Staff can manage orders and respond to chats. Admins have full access to all features.
+              </p>
+            </div>
+            
+            <p className="text-xs bg-yellow-50 p-2 rounded border border-yellow-200 text-yellow-800">
+              A temporary password will be generated automatically. The user should change it after first login.
+            </p>
+          </div>
+          
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button onClick={handleCreateUser} disabled={creatingUser}>
+              {creatingUser ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Account'
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

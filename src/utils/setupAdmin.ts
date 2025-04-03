@@ -34,20 +34,27 @@ export const setupAdmin = async () => {
       if (adminError.message.includes('already registered')) {
         console.log('Admin user already exists in auth system');
         
-        // Check if admin profile exists and ensure it has admin role
-        const { data: existingAdmin, error: adminLookupError } = await supabase.auth.admin.getUserByEmail(adminEmail);
+        // Check if admin profile exists with correct admin role
+        // Using signInWithPassword instead of getUserByEmail which doesn't exist
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: adminEmail,
+          password: adminPassword
+        });
         
-        if (!adminLookupError && existingAdmin?.user) {
+        if (!signInError && signInData?.user) {
           // Ensure profile exists with admin role
           await supabase
             .from('profiles')
             .upsert({
-              id: existingAdmin.user.id,
+              id: signInData.user.id,
               full_name: 'Admin User',
               role: 'admin'
             }, { onConflict: 'id' });
           
           console.log('Admin profile verified/created with correct role');
+          
+          // Sign out after checking/updating
+          await supabase.auth.signOut();
         }
       } else {
         console.error('Failed to create admin user:', adminError);
@@ -91,20 +98,27 @@ export const setupAdmin = async () => {
       if (staffError.message.includes('already registered')) {
         console.log('Staff user already exists in auth system');
         
-        // Check if staff profile exists and ensure it has staff role
-        const { data: existingStaff, error: staffLookupError } = await supabase.auth.admin.getUserByEmail(staffEmail);
+        // Check if staff profile exists with correct staff role
+        // Using signInWithPassword instead of getUserByEmail
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: staffEmail,
+          password: staffPassword
+        });
         
-        if (!staffLookupError && existingStaff?.user) {
+        if (!signInError && signInData?.user) {
           // Ensure profile exists with staff role
           await supabase
             .from('profiles')
             .upsert({
-              id: existingStaff.user.id,
+              id: signInData.user.id,
               full_name: 'Staff User',
               role: 'staff'
             }, { onConflict: 'id' });
           
           console.log('Staff profile verified/created with correct role');
+          
+          // Sign out after checking/updating
+          await supabase.auth.signOut();
         }
       } else {
         console.error('Failed to create staff user:', staffError);

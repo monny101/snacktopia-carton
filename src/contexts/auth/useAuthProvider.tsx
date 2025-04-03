@@ -28,35 +28,45 @@ export const useAuthProvider = () => {
       if (error) {
         console.error('Error fetching user profile:', error);
         
-        // Set a default admin profile if we can't fetch
+        // Create a profile for this user if it doesn't exist yet
+        console.log("Creating missing profile for user:", userId);
+        
+        // Use user metadata to determine role if possible
+        let role = 'customer';
+        if (user?.user_metadata?.role === 'admin') {
+          role = 'admin';
+        } else if (user?.user_metadata?.role === 'staff') {
+          role = 'staff';
+        }
+        
         const defaultProfile: UserProfile = {
           id: userId,
-          full_name: user?.email?.split('@')[0] || null,
+          full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || null,
           phone: null,
-          role: 'admin',  // Force admin role when profile can't be fetched
+          role: role
         };
-        setProfile(defaultProfile);
         
-        // Create the profile with admin role for this user
+        // Try to create profile
         try {
           const { error: insertError } = await supabase
             .from('profiles')
             .insert({
               id: userId,
-              full_name: user?.email?.split('@')[0] || null,
-              phone: null,
-              role: 'admin'
+              full_name: defaultProfile.full_name,
+              phone: defaultProfile.phone,
+              role: defaultProfile.role
             });
             
           if (insertError) {
-            console.error("Error creating admin profile:", insertError);
+            console.error("Error creating profile:", insertError);
           } else {
-            console.log("Created admin profile successfully");
+            console.log("Profile created successfully with role:", defaultProfile.role);
           }
         } catch (insertErr) {
-          console.error("Exception creating admin profile:", insertErr);
+          console.error("Exception creating profile:", insertErr);
         }
         
+        setProfile(defaultProfile);
         return;
       }
 
@@ -64,14 +74,6 @@ export const useAuthProvider = () => {
       setProfile(data as UserProfile);
     } catch (err) {
       console.error('Unexpected error fetching profile:', err);
-      // Set default admin profile on error
-      const defaultProfile: UserProfile = {
-        id: userId,
-        full_name: user?.email?.split('@')[0] || null,
-        phone: null,
-        role: 'admin',  // Force admin role on error
-      };
-      setProfile(defaultProfile);
     }
   };
 
@@ -137,6 +139,8 @@ export const useAuthProvider = () => {
     try {
       console.log("Attempting to sign up user:", email);
       
+      // Default role is always customer for regular signups
+      // Only admins can create other admins or staff
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -144,7 +148,7 @@ export const useAuthProvider = () => {
           data: {
             full_name: fullName,
             phone: phone || null,
-            role: 'admin', // Force admin role for new signups
+            role: 'customer'
           },
         }
       });
@@ -158,38 +162,29 @@ export const useAuthProvider = () => {
       
       // Create profile immediately to ensure it exists
       if (data.user) {
-        // First check if profile already exists
-        const { data: existingProfile } = await supabase
+        console.log("Creating profile immediately after signup");
+        const { error: profileError } = await supabase
           .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .single();
+          .insert({
+            id: data.user.id,
+            full_name: fullName,
+            phone: phone || null,
+            role: 'customer'  // Regular users always get customer role
+          });
           
-        if (!existingProfile) {
-          console.log("Creating profile immediately after signup with admin role");
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: data.user.id,
-              full_name: fullName,
-              phone: phone || null,
-              role: 'admin'  // Force admin role for new signups
-            });
-            
-          if (profileError) {
-            console.error("Error creating profile during signup:", profileError);
-          } else {
-            console.log("Profile created successfully during signup with admin role");
-          }
+        if (profileError) {
+          console.error("Error creating profile during signup:", profileError);
+        } else {
+          console.log("Profile created successfully during signup");
         }
         
-        // Fetch the user's profile after signup (or creating it)
+        // Fetch the user's profile after signup
         fetchUserProfile(data.user.id);
       }
       
       toast({
         title: "Account created successfully",
-        description: "You are now logged in as an admin",
+        description: "You are now logged in",
         duration: 2000,
       });
       
