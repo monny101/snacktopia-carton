@@ -5,10 +5,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider } from "@/contexts/auth/AuthContext";
 
 import Layout from "@/components/Layout";
 import AdminLayout from "@/components/AdminLayout";
+import StaffLayout from "@/components/StaffLayout";
 import Home from "@/pages/Home";
 import Products from "@/pages/Products";
 import ProductDetails from "@/pages/ProductDetails";
@@ -26,6 +27,10 @@ import AdminProducts from "@/pages/admin/Products";
 import AdminOrders from "@/pages/admin/Orders";
 import AdminChat from "@/pages/admin/Chat";
 import AdminUsers from "@/pages/admin/Users";
+
+// Staff Pages (using the same components as admin for now)
+import StaffOrders from "@/pages/admin/Orders";
+import StaffChat from "@/pages/admin/Chat";
 
 // Customer Chat Component
 import CustomerChat from "@/components/CustomerChat";
@@ -61,6 +66,13 @@ const App = () => (
                 <Route path="orders" element={<AdminOrders />} />
                 <Route path="chat" element={<AdminChat />} />
                 <Route path="users" element={<AdminUsers />} />
+              </Route>
+              
+              {/* Staff Routes */}
+              <Route path="/staff" element={<StaffLayout />}>
+                <Route index element={<StaffOrders />} />
+                <Route path="orders" element={<StaffOrders />} />
+                <Route path="chat" element={<StaffChat />} />
               </Route>
             </Routes>
             <CustomerChat />

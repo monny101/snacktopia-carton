@@ -34,43 +34,43 @@ export const setupAdmin = async () => {
       if (adminError.message.includes('already registered')) {
         console.log('Admin user already exists in auth system');
         
-        // Check if admin profile exists
-        const { data: adminProfile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', adminAuthData?.user?.id || 'no-id')
-          .single();
+        // Check if admin profile exists and ensure it has admin role
+        const { data: existingAdmin, error: adminLookupError } = await supabase.auth.admin.getUserByEmail(adminEmail);
         
-        if (profileError) {
-          console.log('Admin profile may not exist yet, attempting to create it manually');
-          
-          // Try to get admin user ID
-          const { data } = await supabase.auth.admin.listUsers();
-          
-          // Safely access the users array and handle potential undefined
-          const users = data?.users || [];
-          const adminUser = users.find(u => {
-            // Safely check if email property exists before using it
-            return u && typeof u === 'object' && 'email' in u && u.email === adminEmail;
-          });
-          
-          if (adminUser?.id) {
-            // Manually create admin profile if needed
-            await supabase.from('profiles').upsert({
-              id: adminUser.id,
+        if (!adminLookupError && existingAdmin?.user) {
+          // Ensure profile exists with admin role
+          await supabase
+            .from('profiles')
+            .upsert({
+              id: existingAdmin.user.id,
               full_name: 'Admin User',
               role: 'admin'
-            });
-            console.log('Admin profile created manually');
-          }
-        } else {
-          console.log('Admin profile exists:', adminProfile);
+            }, { onConflict: 'id' });
+          
+          console.log('Admin profile verified/created with correct role');
         }
       } else {
         console.error('Failed to create admin user:', adminError);
       }
     } else {
       console.log('Admin user created successfully');
+      
+      // Make sure the profile is created with admin role
+      if (adminAuthData?.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: adminAuthData.user.id,
+            full_name: 'Admin User',
+            role: 'admin'
+          });
+          
+        if (profileError) {
+          console.error('Failed to create admin profile:', profileError);
+        } else {
+          console.log('Admin profile created successfully with admin role');
+        }
+      }
     }
     
     // Try to create staff user
@@ -91,43 +91,43 @@ export const setupAdmin = async () => {
       if (staffError.message.includes('already registered')) {
         console.log('Staff user already exists in auth system');
         
-        // Check if staff profile exists
-        const { data: staffProfile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', staffAuthData?.user?.id || 'no-id')
-          .single();
+        // Check if staff profile exists and ensure it has staff role
+        const { data: existingStaff, error: staffLookupError } = await supabase.auth.admin.getUserByEmail(staffEmail);
         
-        if (profileError) {
-          console.log('Staff profile may not exist yet, attempting to create it manually');
-          
-          // Try to get staff user ID
-          const { data } = await supabase.auth.admin.listUsers();
-          
-          // Safely access the users array and handle potential undefined
-          const users = data?.users || [];
-          const staffUser = users.find(u => {
-            // Safely check if email property exists before using it
-            return u && typeof u === 'object' && 'email' in u && u.email === staffEmail;
-          });
-          
-          if (staffUser?.id) {
-            // Manually create staff profile if needed
-            await supabase.from('profiles').upsert({
-              id: staffUser.id,
+        if (!staffLookupError && existingStaff?.user) {
+          // Ensure profile exists with staff role
+          await supabase
+            .from('profiles')
+            .upsert({
+              id: existingStaff.user.id,
               full_name: 'Staff User',
               role: 'staff'
-            });
-            console.log('Staff profile created manually');
-          }
-        } else {
-          console.log('Staff profile exists:', staffProfile);
+            }, { onConflict: 'id' });
+          
+          console.log('Staff profile verified/created with correct role');
         }
       } else {
         console.error('Failed to create staff user:', staffError);
       }
     } else {
       console.log('Staff user created successfully');
+      
+      // Make sure the profile is created with staff role
+      if (staffAuthData?.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: staffAuthData.user.id,
+            full_name: 'Staff User',
+            role: 'staff'
+          });
+          
+        if (profileError) {
+          console.error('Failed to create staff profile:', profileError);
+        } else {
+          console.log('Staff profile created successfully with staff role');
+        }
+      }
     }
     
     return true;

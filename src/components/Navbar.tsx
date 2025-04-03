@@ -6,7 +6,7 @@ import {
   Settings, ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth/AuthContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,8 +72,8 @@ const Navbar: React.FC = () => {
                     </Link>
                   </DropdownMenuItem>
                   
-                  {/* Admin/Staff Links */}
-                  {(isAdmin || isStaff) && (
+                  {/* Admin Link */}
+                  {isAdmin && (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuLabel>Administration</DropdownMenuLabel>
@@ -81,6 +81,20 @@ const Navbar: React.FC = () => {
                         <Link to="/admin" className="cursor-pointer">
                           <Settings className="mr-2 h-4 w-4" />
                           <span>Admin Panel</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+
+                  {/* Staff Link */}
+                  {isStaff && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Staff</DropdownMenuLabel>
+                      <DropdownMenuItem asChild>
+                        <Link to="/staff" className="cursor-pointer">
+                          <Package className="mr-2 h-4 w-4" />
+                          <span>Staff Panel</span>
                         </Link>
                       </DropdownMenuItem>
                     </>
@@ -142,9 +156,14 @@ const Navbar: React.FC = () => {
               <Link to="/profile" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
                 Profile
               </Link>
-              {(isAdmin || isStaff) && (
+              {isAdmin && (
                 <Link to="/admin" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
                   Admin Panel
+                </Link>
+              )}
+              {isStaff && (
+                <Link to="/staff" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
+                  Staff Panel
                 </Link>
               )}
               <button 
