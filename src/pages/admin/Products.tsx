@@ -23,6 +23,7 @@ import { Pencil, Trash, Plus, Search, ArrowUp, ArrowDown } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/auth/AuthContext';
 
 interface Category {
   id: string;
@@ -47,6 +48,7 @@ interface Product {
 }
 
 const AdminProducts: React.FC = () => {
+  const { isAdmin, isAuthenticated } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
@@ -172,6 +174,15 @@ const AdminProducts: React.FC = () => {
   
   const handleAddProduct = async () => {
     try {
+      if (!isAuthenticated) {
+        toast({
+          title: 'Authentication Required',
+          description: 'You need to be logged in to add products.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       if (!formName || !formPrice || !formQuantity) {
         toast({
           title: 'Error',
@@ -232,6 +243,15 @@ const AdminProducts: React.FC = () => {
   
   const handleUpdateProduct = async () => {
     try {
+      if (!isAuthenticated) {
+        toast({
+          title: 'Authentication Required',
+          description: 'You need to be logged in to update products.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       if (!selectedProduct) return;
       
       if (!formName || !formPrice || !formQuantity) {
@@ -295,6 +315,15 @@ const AdminProducts: React.FC = () => {
   
   const handleDeleteProduct = async () => {
     try {
+      if (!isAuthenticated) {
+        toast({
+          title: 'Authentication Required',
+          description: 'You need to be logged in to delete products.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       if (!selectedProduct) return;
       
       console.log("Deleting product:", selectedProduct.id);
@@ -338,6 +367,15 @@ const AdminProducts: React.FC = () => {
   
   const handleAddCategory = async () => {
     try {
+      if (!isAuthenticated) {
+        toast({
+          title: 'Authentication Required',
+          description: 'You need to be logged in to add categories.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       if (!formCategoryName) {
         toast({
           title: 'Error',
@@ -392,6 +430,15 @@ const AdminProducts: React.FC = () => {
   
   const handleAddSubcategory = async () => {
     try {
+      if (!isAuthenticated) {
+        toast({
+          title: 'Authentication Required',
+          description: 'You need to be logged in to add subcategories.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       if (!formSubcategoryName || !formCategoryId) {
         toast({
           title: 'Error',
