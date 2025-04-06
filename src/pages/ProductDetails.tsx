@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ShoppingCart, ChevronLeft, Plus, Minus, Loader2 } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface Product {
   id: string;
@@ -50,49 +51,71 @@ const ProductDetails: React.FC = () => {
       
       try {
         // Get product details
+        console.log("Fetching product with ID:", id);
         const { data: productData, error: productError } = await supabase
           .from('products')
           .select('*')
           .eq('id', id)
           .single();
           
-        if (productError) throw productError;
+        if (productError) {
+          console.error("Error fetching product:", productError);
+          throw productError;
+        }
+        
         if (!productData) {
+          console.log("Product not found");
           setError('Product not found');
           setLoading(false);
           return;
         }
         
+        console.log("Product data retrieved:", productData);
         setProduct(productData);
         
         // Get subcategory details if product has a subcategory
         if (productData.subcategory_id) {
+          console.log("Fetching subcategory:", productData.subcategory_id);
           const { data: subcategoryData, error: subcategoryError } = await supabase
             .from('subcategories')
             .select('*')
             .eq('id', productData.subcategory_id)
             .single();
             
-          if (subcategoryError) throw subcategoryError;
+          if (subcategoryError) {
+            console.error("Error fetching subcategory:", subcategoryError);
+            throw subcategoryError;
+          }
           
+          console.log("Subcategory data:", subcategoryData);
           setSubcategory(subcategoryData);
           
           // Get category details if subcategory has a category
           if (subcategoryData && subcategoryData.category_id) {
+            console.log("Fetching category:", subcategoryData.category_id);
             const { data: categoryData, error: categoryError } = await supabase
               .from('categories')
               .select('*')
               .eq('id', subcategoryData.category_id)
               .single();
               
-            if (categoryError) throw categoryError;
+            if (categoryError) {
+              console.error("Error fetching category:", categoryError);
+              throw categoryError;
+            }
             
+            console.log("Category data:", categoryData);
             setCategory(categoryData);
           }
         }
-      } catch (error) {
-        console.error('Error fetching product:', error);
+      } catch (error: any) {
+        console.error('Error fetching product details:', error);
         setError('Error loading product details');
+        toast({
+          title: 'Error',
+          description: 'Failed to load product details',
+          variant: 'destructive',
+        });
       } finally {
         setLoading(false);
       }
@@ -120,6 +143,11 @@ const ProductDetails: React.FC = () => {
         name: product.name,
         price: product.price,
         image: product.image_url || ''
+      });
+      
+      toast({
+        title: "Added to cart",
+        description: `${product.name} has been added to your cart`,
       });
     }
   };

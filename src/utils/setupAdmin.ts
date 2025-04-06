@@ -3,65 +3,71 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const setupAdmin = async () => {
   try {
-    console.log("Setting up admin roles and functions...");
+    console.log("Setting up admin roles...");
 
-    // Create or replace the handle_new_user function
-    const { error: functionError } = await supabase.rpc('create_handle_new_user_function', {});
+    // Check if admin role exists in profiles
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', 'admin')
+      .limit(1);
     
-    if (functionError) {
-      console.error("Error creating handle_new_user function:", functionError);
-    } else {
-      console.log("Created handle_new_user function successfully");
+    if (profileError) {
+      console.error("Error checking admin profiles:", profileError);
+      return false;
     }
-
-    // Create SQL functions to update and create the handle_new_user function
-    const { error: createFunctionsError } = await supabase.rpc('create_admin_functions', {});
     
-    if (createFunctionsError) {
-      console.error("Error creating admin functions:", createFunctionsError);
-    } else {
-      console.log("Created admin functions successfully");
-    }
-
-    // Try to create a hardcoded admin user (this is for initial setup)
-    try {
-      const { data, error } = await supabase.auth.admin.createUser({
-        email: 'admin@mondocartonking.com',
-        password: 'password123',
-        email_confirm: true,
-        user_metadata: {
-          full_name: 'Admin User',
-          role: 'admin'
-        }
-      });
+    console.log("Admin check result:", profileData);
+    
+    // If no admin exists, try to create one
+    if (!profileData || profileData.length === 0) {
+      console.log("No admin found, attempting to create one");
       
-      if (error) {
-        console.error("Error creating admin user:", error);
-        return false;
-      } else {
-        console.log("Created admin user successfully:", data);
+      try {
+        // Create a hardcoded admin user for initial setup
+        const { data: userData, error: userError } = await supabase.auth.signUp({
+          email: 'admin@mondocartonking.com',
+          password: 'password123',
+          options: {
+            data: {
+              full_name: 'Admin User',
+              role: 'admin'
+            }
+          }
+        });
         
-        // Create the profile for the admin user
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: data.user.id,
-            full_name: 'Admin User',
-            role: 'admin'
-          });
-        
-        if (profileError) {
-          console.error("Error creating admin profile:", profileError);
+        if (userError) {
+          console.error("Error creating admin user:", userError);
           return false;
-        } else {
-          console.log("Created admin profile successfully");
-          return true;
+        } 
+        
+        console.log("Created admin user successfully");
+        
+        // Create profile for the admin user
+        if (userData.user) {
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: userData.user.id,
+              full_name: 'Admin User',
+              role: 'admin'
+            });
+          
+          if (insertError) {
+            console.error("Error creating admin profile:", insertError);
+            return false;
+          } else {
+            console.log("Created admin profile successfully");
+            return true;
+          }
         }
+      } catch (err) {
+        console.log("Admin user may already exist, skipping creation");
+        return true;
       }
-    } catch (err) {
-      console.log("Admin user may already exist, skipping creation");
-      return true;
     }
+    
+    return true;
   } catch (err) {
     console.error("Error in setupAdmin:", err);
     return false;
