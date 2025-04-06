@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -90,6 +91,11 @@ const AdminProducts: React.FC = () => {
         
         if (categoriesError) {
           console.error('Error fetching categories:', categoriesError);
+          toast({
+            title: "Error",
+            description: "Could not load categories",
+            variant: "destructive"
+          });
           throw categoriesError;
         }
         
@@ -103,6 +109,11 @@ const AdminProducts: React.FC = () => {
         
         if (subcategoriesError) {
           console.error('Error fetching subcategories:', subcategoriesError);
+          toast({
+            title: "Error",
+            description: "Could not load subcategories",
+            variant: "destructive"
+          });
           throw subcategoriesError;
         }
         
@@ -116,6 +127,11 @@ const AdminProducts: React.FC = () => {
         
         if (productsError) {
           console.error('Error fetching products:', productsError);
+          toast({
+            title: "Error",
+            description: "Could not load products",
+            variant: "destructive"
+          });
           throw productsError;
         }
         

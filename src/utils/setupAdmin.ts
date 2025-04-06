@@ -9,7 +9,7 @@ export const setupAdmin = async () => {
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('role', 'admin')
+      .eq('role', 'customer')
       .limit(1);
     
     if (profileError) {
@@ -31,7 +31,7 @@ export const setupAdmin = async () => {
           options: {
             data: {
               full_name: 'Admin User',
-              role: 'admin'
+              role: 'customer'
             }
           }
         });
@@ -50,7 +50,7 @@ export const setupAdmin = async () => {
             .insert({
               id: userData.user.id,
               full_name: 'Admin User',
-              role: 'admin'
+              role: 'customer'
             });
           
           if (insertError) {
