@@ -14,6 +14,7 @@ export interface AuthContextType {
   profile: UserProfile | null;
   isAdmin: boolean;
   isStaff: boolean;
+  isCustomer: boolean;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ error: any | null }>;
