@@ -91,7 +91,7 @@ const AdminProducts: React.FC = () => {
           .order('name');
         
         if (categoriesError) throw categoriesError;
-        setCategories(categoriesData);
+        setCategories(categoriesData || []);
         
         // Fetch subcategories
         const { data: subcategoriesData, error: subcategoriesError } = await supabase
@@ -100,7 +100,7 @@ const AdminProducts: React.FC = () => {
           .order('name');
         
         if (subcategoriesError) throw subcategoriesError;
-        setSubcategories(subcategoriesData);
+        setSubcategories(subcategoriesData || []);
         
         // Fetch products
         const { data, error } = await supabase
@@ -109,7 +109,7 @@ const AdminProducts: React.FC = () => {
           .order(sortField, { ascending: sortDirection === 'asc' });
         
         if (error) throw error;
-        setProducts(data);
+        setProducts(data || []);
       } catch (error) {
         console.error('Error fetching data:', error);
         toast({

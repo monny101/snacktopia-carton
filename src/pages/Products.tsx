@@ -4,184 +4,131 @@ import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/ProductCard';
 import { Loader2, Filter, SlidersHorizontal } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
-// Mock data for products
-const allProducts = [
-  {
-    id: '1',
-    name: 'Premium Potato Chips (Carton)',
-    description: 'A full carton of premium potato chips, perfect for retail or events. Contains 48 packets.',
-    price: 15000,
-    image: 'https://images.unsplash.com/photo-1613919113640-25732ec5e61f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-    category: 'snacks',
-    subcategory: 'chips'
-  },
-  {
-    id: '2',
-    name: 'Luxury Bath Soap (24 Pack)',
-    description: 'Premium bath soaps with moisturizing ingredients. Bulk pack contains 24 individually wrapped bars.',
-    price: 12500,
-    image: 'https://images.unsplash.com/photo-1600857544200-b2f666a9a2ec?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-    category: 'soaps',
-    subcategory: 'bath-soaps'
-  },
-  {
-    id: '3',
-    name: 'Ultra Clean Detergent (Bulk)',
-    description: 'Heavy-duty laundry detergent for tough stains. Bulk package for commercial or large family use.',
-    price: 9500,
-    image: 'https://images.unsplash.com/photo-1583947582774-311effb951b8?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-    category: 'detergents',
-    subcategory: 'laundry'
-  },
-  {
-    id: '4',
-    name: 'Mixed Candy Assortment (3kg)',
-    description: 'Assorted candies and sweets in a bulk 3kg package. Perfect for events or retail.',
-    price: 8000,
-    image: 'https://images.unsplash.com/photo-1621939514649-280e2ee25f60?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-    category: 'sweets',
-    subcategory: 'candy'
-  },
-  {
-    id: '5',
-    name: 'Aromatic Spice Collection',
-    description: 'Collection of premium cooking spices in bulk packaging for restaurants or catering businesses.',
-    price: 7500,
-    image: 'https://images.unsplash.com/photo-1532336414038-cf19250c5757?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-    category: 'food-ingredients',
-    subcategory: 'spices'
-  },
-  {
-    id: '6',
-    name: 'Gourmet Chocolate Cookies (Box)',
-    description: 'Premium chocolate cookies in a bulk box of 36 individually wrapped packets.',
-    price: 6500,
-    image: 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-    category: 'snacks',
-    subcategory: 'cookies'
-  },
-  {
-    id: '7',
-    name: 'Antibacterial Kitchen Soap (12 Pack)',
-    description: 'Specialized kitchen soap with antibacterial properties. Pack of 12 bottles.',
-    price: 5800,
-    image: 'https://images.unsplash.com/photo-1584305574916-6f1a7622b824?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-    category: 'soaps',
-    subcategory: 'kitchen-soaps'
-  },
-  {
-    id: '8',
-    name: 'Fabric Softener Bulk Pack',
-    description: 'Professional grade fabric softener for laundry businesses. 10-liter bulk container.',
-    price: 11200,
-    image: 'https://images.unsplash.com/photo-1616363301214-d6401c888c62?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-    category: 'detergents',
-    subcategory: 'fabric-care'
-  },
-  {
-    id: '9',
-    name: 'Chocolate Bars Wholesale Box',
-    description: 'Premium chocolate bars in a wholesale box of 48 bars. Ideal for reselling or events.',
-    price: 13500,
-    image: 'https://images.unsplash.com/photo-1614088685112-0a760b71a3c8?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-    category: 'sweets',
-    subcategory: 'chocolate'
-  },
-  {
-    id: '10',
-    name: 'Cooking Oil (5L)',
-    description: 'High-quality vegetable cooking oil in a 5-liter container. Perfect for restaurants or large families.',
-    price: 4500,
-    image: 'https://images.unsplash.com/photo-1616500457363-89acdad8fcde?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-    category: 'food-ingredients',
-    subcategory: 'oils'
-  },
-  {
-    id: '11',
-    name: 'Rice Crackers Bulk Pack',
-    description: 'Light and crispy rice crackers in a bulk package of 36 individual servings.',
-    price: 5200,
-    image: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-    category: 'snacks',
-    subcategory: 'crackers'
-  },
-  {
-    id: '12',
-    name: 'Hand Soap Dispenser Pack (6)',
-    description: 'Set of 6 hand soap dispensers with moisturizing formula. Ideal for businesses or large households.',
-    price: 4800,
-    image: 'https://images.unsplash.com/photo-1584305572586-090dca040af5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-    category: 'soaps',
-    subcategory: 'hand-soaps'
-  }
-];
+// Define types for product and category data
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image_url: string;
+  subcategory_id: string;
+  featured: boolean;
+}
 
-// Category data
-const categories = [
-  { id: 'snacks', name: 'Snacks', subcategories: ['chips', 'cookies', 'crackers'] },
-  { id: 'soaps', name: 'Soaps', subcategories: ['bath-soaps', 'kitchen-soaps', 'hand-soaps'] },
-  { id: 'detergents', name: 'Detergents', subcategories: ['laundry', 'fabric-care'] },
-  { id: 'sweets', name: 'Sweets', subcategories: ['candy', 'chocolate'] },
-  { id: 'food-ingredients', name: 'Food Ingredients', subcategories: ['spices', 'oils'] }
-];
+interface Category {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+interface Subcategory {
+  id: string;
+  name: string;
+  category_id: string;
+  description?: string;
+}
 
 const Products: React.FC = () => {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const categoryParam = queryParams.get('category');
   
-  const [products, setProducts] = useState(allProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(categoryParam);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState<'default' | 'priceAsc' | 'priceDesc'>('default');
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
 
-  // Simulate loading state
+  // Fetch categories, subcategories, and products from Supabase
   useEffect(() => {
-    setLoading(true);
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 800);
+    const fetchData = async () => {
+      setLoading(true);
+      
+      try {
+        // Fetch categories
+        const { data: categoriesData, error: categoriesError } = await supabase
+          .from('categories')
+          .select('*')
+          .order('name');
+        
+        if (categoriesError) throw categoriesError;
+        setCategories(categoriesData || []);
+        
+        // Fetch subcategories
+        const { data: subcategoriesData, error: subcategoriesError } = await supabase
+          .from('subcategories')
+          .select('*')
+          .order('name');
+        
+        if (subcategoriesError) throw subcategoriesError;
+        setSubcategories(subcategoriesData || []);
+        
+        // Fetch products
+        const { data: productsData, error: productsError } = await supabase
+          .from('products')
+          .select('*');
+          
+        if (productsError) throw productsError;
+        setProducts(productsData || []);
+        
+      } catch (error) {
+        console.error('Error fetching data from Supabase:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    return () => clearTimeout(timer);
-  }, [selectedCategory, selectedSubcategory, searchTerm, sortBy]);
+    fetchData();
+  }, []);
 
-  // Filter products based on category, subcategory, and search
+  // Filter and sort products
   useEffect(() => {
-    let filteredProducts = [...allProducts];
+    let result = [...products];
     
+    // Apply category filter
     if (selectedCategory) {
-      filteredProducts = filteredProducts.filter(product => product.category === selectedCategory);
-    }
-    
-    if (selectedSubcategory) {
-      filteredProducts = filteredProducts.filter(product => product.subcategory === selectedSubcategory);
-    }
-    
-    if (searchTerm) {
-      const search = searchTerm.toLowerCase();
-      filteredProducts = filteredProducts.filter(product => 
-        product.name.toLowerCase().includes(search) || 
-        product.description.toLowerCase().includes(search)
+      const categorySubcategories = subcategories.filter(
+        sub => categories.find(cat => cat.id === sub.category_id && cat.id === selectedCategory)
+      );
+      result = result.filter(product => 
+        categorySubcategories.some(sub => sub.id === product.subcategory_id)
       );
     }
     
-    // Sort products
-    if (sortBy === 'priceAsc') {
-      filteredProducts.sort((a, b) => a.price - b.price);
-    } else if (sortBy === 'priceDesc') {
-      filteredProducts.sort((a, b) => b.price - a.price);
+    // Apply subcategory filter
+    if (selectedSubcategory) {
+      result = result.filter(product => product.subcategory_id === selectedSubcategory);
     }
     
-    setProducts(filteredProducts);
-  }, [selectedCategory, selectedSubcategory, searchTerm, sortBy]);
+    // Apply search filter
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      result = result.filter(product => 
+        product.name.toLowerCase().includes(search) || 
+        (product.description && product.description.toLowerCase().includes(search))
+      );
+    }
+    
+    // Apply sorting
+    if (sortBy === 'priceAsc') {
+      result.sort((a, b) => a.price - b.price);
+    } else if (sortBy === 'priceDesc') {
+      result.sort((a, b) => b.price - a.price);
+    }
+    
+    setFilteredProducts(result);
+  }, [products, selectedCategory, selectedSubcategory, searchTerm, sortBy, categories, subcategories]);
 
   // Get subcategories for the selected category
-  const subcategories = selectedCategory 
-    ? categories.find(cat => cat.id === selectedCategory)?.subcategories || [] 
+  const categorySubcategories = selectedCategory 
+    ? subcategories.filter(sub => sub.category_id === selectedCategory) 
     : [];
 
   // Reset subcategory when category changes
@@ -200,6 +147,18 @@ const Products: React.FC = () => {
     window.history.replaceState(null, '', newUrl);
   }, [selectedCategory, selectedSubcategory, searchTerm, location.pathname]);
 
+  // Helper function to get category name by ID
+  const getCategoryName = (categoryId: string) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category ? category.name : 'Unknown';
+  };
+
+  // Helper function to get subcategory name by ID
+  const getSubcategoryName = (subcategoryId: string) => {
+    const subcategory = subcategories.find(sub => sub.id === subcategoryId);
+    return subcategory ? subcategory.name : 'Unknown';
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">Products</h1>
@@ -212,7 +171,7 @@ const Products: React.FC = () => {
             <input
               type="text"
               placeholder="Search products..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-mondoBlue"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -223,7 +182,7 @@ const Products: React.FC = () => {
             <label htmlFor="sort" className="text-sm font-medium whitespace-nowrap">Sort by:</label>
             <select
               id="sort"
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-mondoBlue"
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as 'default' | 'priceAsc' | 'priceDesc')}
             >
@@ -252,7 +211,7 @@ const Products: React.FC = () => {
               <label htmlFor="category" className="text-sm font-medium mb-1">Category</label>
               <select
                 id="category"
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-mondoBlue"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={selectedCategory || ''}
                 onChange={(e) => setSelectedCategory(e.target.value || null)}
               >
@@ -271,14 +230,14 @@ const Products: React.FC = () => {
                 <label htmlFor="subcategory" className="text-sm font-medium mb-1">Subcategory</label>
                 <select
                   id="subcategory"
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-mondoBlue"
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={selectedSubcategory || ''}
                   onChange={(e) => setSelectedSubcategory(e.target.value || null)}
                 >
                   <option value="">All Subcategories</option>
-                  {subcategories.map(subcat => (
-                    <option key={subcat} value={subcat}>
-                      {subcat.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                  {categorySubcategories.map(subcategory => (
+                    <option key={subcategory.id} value={subcategory.id}>
+                      {subcategory.name}
                     </option>
                   ))}
                 </select>
@@ -295,7 +254,7 @@ const Products: React.FC = () => {
                   setSearchTerm('');
                   setSortBy('default');
                 }}
-                className="text-mondoBlue hover:text-mondoBlue/80"
+                className="text-blue-500 hover:text-blue-700"
               >
                 Reset Filters
               </Button>
@@ -310,21 +269,21 @@ const Products: React.FC = () => {
           <h2 className="text-xl font-semibold">
             {loading 
               ? 'Loading products...' 
-              : products.length === 0 
+              : filteredProducts.length === 0 
                 ? 'No products found' 
-                : `${products.length} products found`}
+                : `${filteredProducts.length} products found`}
           </h2>
           
           {/* Display active filters */}
           <div className="flex items-center gap-2">
             {selectedCategory && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-mondoBlue text-white">
-                {categories.find(cat => cat.id === selectedCategory)?.name}
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500 text-white">
+                {getCategoryName(selectedCategory)}
               </span>
             )}
             {selectedSubcategory && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-mondoYellow text-mondoBlue">
-                {selectedSubcategory.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500 text-blue-900">
+                {getSubcategoryName(selectedSubcategory)}
               </span>
             )}
           </div>
@@ -332,9 +291,9 @@ const Products: React.FC = () => {
         
         {loading ? (
           <div className="flex justify-center items-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-mondoBlue" />
+            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
           </div>
-        ) : products.length === 0 ? (
+        ) : filteredProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center">
             <SlidersHorizontal className="h-12 w-12 text-gray-400 mb-4" />
             <p className="text-xl font-medium text-gray-500 mb-2">No products found</p>
@@ -342,8 +301,19 @@ const Products: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {products.map(product => (
-              <ProductCard key={product.id} product={product} />
+            {filteredProducts.map(product => (
+              <ProductCard 
+                key={product.id} 
+                product={{
+                  id: product.id,
+                  name: product.name,
+                  price: product.price,
+                  image: product.image_url || 'https://placehold.co/400x300?text=No+Image',
+                  description: product.description || '',
+                  category: getCategoryName(subcategories.find(sub => sub.id === product.subcategory_id)?.category_id || ''),
+                  subcategory: getSubcategoryName(product.subcategory_id || '')
+                }} 
+              />
             ))}
           </div>
         )}
