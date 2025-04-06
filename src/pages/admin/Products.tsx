@@ -1,9 +1,8 @@
-
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import React, { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -11,18 +10,18 @@ import {
   DialogTitle,
   DialogFooter,
   DialogClose,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Pencil, Trash, Plus, Search, ArrowUp, ArrowDown } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
-import { Textarea } from '@/components/ui/textarea';
-import { Loader2 } from 'lucide-react';
+} from "@/components/ui/select";
+import { Pencil, Trash, Plus, Search, ArrowUp, ArrowDown } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
+import { Loader2 } from "lucide-react";
 
 interface Category {
   id: string;
@@ -51,130 +50,131 @@ const AdminProducts: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  
+  const [searchTerm, setSearchTerm] = useState("");
+
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddCategoryDialogOpen, setIsAddCategoryDialogOpen] = useState(false);
-  const [isAddSubcategoryDialogOpen, setIsAddSubcategoryDialogOpen] = useState(false);
-  
+  const [isAddSubcategoryDialogOpen, setIsAddSubcategoryDialogOpen] =
+    useState(false);
+
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [sortField, setSortField] = useState<string>('name');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortField, setSortField] = useState<string>("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   // Form states
-  const [formName, setFormName] = useState('');
-  const [formDescription, setFormDescription] = useState('');
-  const [formPrice, setFormPrice] = useState('');
-  const [formQuantity, setFormQuantity] = useState('');
-  const [formImageUrl, setFormImageUrl] = useState('');
-  const [formSubcategoryId, setFormSubcategoryId] = useState('');
+  const [formName, setFormName] = useState("");
+  const [formDescription, setFormDescription] = useState("");
+  const [formPrice, setFormPrice] = useState("");
+  const [formQuantity, setFormQuantity] = useState("");
+  const [formImageUrl, setFormImageUrl] = useState("");
+  const [formSubcategoryId, setFormSubcategoryId] = useState("");
   const [formFeatured, setFormFeatured] = useState(false);
-  
-  const [formCategoryName, setFormCategoryName] = useState('');
-  const [formCategoryDescription, setFormCategoryDescription] = useState('');
-  const [formSubcategoryName, setFormSubcategoryName] = useState('');
-  const [formSubcategoryDescription, setFormSubcategoryDescription] = useState('');
-  const [formCategoryId, setFormCategoryId] = useState('');
-  
+
+  const [formCategoryName, setFormCategoryName] = useState("");
+  const [formCategoryDescription, setFormCategoryDescription] = useState("");
+  const [formSubcategoryName, setFormSubcategoryName] = useState("");
+  const [formSubcategoryDescription, setFormSubcategoryDescription] =
+    useState("");
+  const [formCategoryId, setFormCategoryId] = useState("");
+
   // Fetch products, categories, and subcategories
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch categories
         const { data: categoriesData, error: categoriesError } = await supabase
-          .from('categories')
-          .select('*')
-          .order('name');
-        
+          .from("categories")
+          .select("*")
+          .order("name");
+
         if (categoriesError) throw categoriesError;
         setCategories(categoriesData);
-        
+
         // Fetch subcategories
-        const { data: subcategoriesData, error: subcategoriesError } = await supabase
-          .from('subcategories')
-          .select('*')
-          .order('name');
-        
+        const { data: subcategoriesData, error: subcategoriesError } =
+          await supabase.from("subcategories").select("*").order("name");
+
         if (subcategoriesError) throw subcategoriesError;
         setSubcategories(subcategoriesData);
-        
+
         // Fetch products
         const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .order(sortField, { ascending: sortDirection === 'asc' });
-        
+          .from("products")
+          .select("*")
+          .order(sortField, { ascending: sortDirection === "asc" });
+
         if (error) throw error;
         setProducts(data);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error("Error fetching data:", error);
         toast({
-          title: 'Error',
-          description: 'Failed to load data',
-          variant: 'destructive',
+          title: "Error",
+          description: "Failed to load data",
+          variant: "destructive",
         });
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, [sortField, sortDirection]);
-  
+
   // Handle sort toggle
   const handleSort = (field: string) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
-  
+
   // Filter products based on search term
-  const filteredProducts = products.filter(product => 
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredProducts = products.filter(
+    (product) =>
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.description?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
-  
+
   // Reset form fields
   const resetForm = () => {
-    setFormName('');
-    setFormDescription('');
-    setFormPrice('');
-    setFormQuantity('');
-    setFormImageUrl('');
-    setFormSubcategoryId('');
+    setFormName("");
+    setFormDescription("");
+    setFormPrice("");
+    setFormQuantity("");
+    setFormImageUrl("");
+    setFormSubcategoryId("");
     setFormFeatured(false);
   };
-  
+
   // Set form fields for editing
   const setFormForEdit = (product: Product) => {
     setFormName(product.name);
-    setFormDescription(product.description || '');
+    setFormDescription(product.description || "");
     setFormPrice(product.price.toString());
     setFormQuantity(product.quantity.toString());
-    setFormImageUrl(product.image_url || '');
+    setFormImageUrl(product.image_url || "");
     setFormSubcategoryId(product.subcategory_id);
     setFormFeatured(product.featured || false);
   };
-  
+
   // Add a new product
   const handleAddProduct = async () => {
     try {
       if (!formName || !formPrice || !formQuantity || !formSubcategoryId) {
         toast({
-          title: 'Error',
-          description: 'Please fill all required fields',
-          variant: 'destructive',
+          title: "Error",
+          description: "Please fill all required fields",
+          variant: "destructive",
         });
         return;
       }
-      
+
       const newProduct = {
         name: formName,
         description: formDescription,
@@ -182,48 +182,63 @@ const AdminProducts: React.FC = () => {
         quantity: parseInt(formQuantity),
         image_url: formImageUrl,
         subcategory_id: formSubcategoryId,
-        featured: formFeatured
+        featured: formFeatured,
       };
-      
+
+      console.log("Adding product:", newProduct);
+
       const { data, error } = await supabase
-        .from('products')
+        .from("products")
         .insert([newProduct])
         .select();
-      
-      if (error) throw error;
-      
+
+      if (error) {
+        console.error("Error response from Supabase:", error);
+        throw error;
+      }
+
+      console.log("Product added successfully:", data);
       setProducts([...products, data[0]]);
       setIsAddDialogOpen(false);
       resetForm();
-      
+
       toast({
-        title: 'Success',
-        description: 'Product added successfully',
+        title: "Success",
+        description: "Product added successfully",
       });
-    } catch (error) {
-      console.error('Error adding product:', error);
+    } catch (error: any) {
+      console.error("Error adding product:", error);
+
+      let errorMessage = "Failed to add product";
+      if (error.code === "42501") {
+        errorMessage =
+          "Permission denied. You need admin privileges to add products.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       toast({
-        title: 'Error',
-        description: 'Failed to add product',
-        variant: 'destructive',
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
       });
     }
   };
-  
+
   // Update a product
   const handleUpdateProduct = async () => {
     try {
       if (!selectedProduct) return;
-      
+
       if (!formName || !formPrice || !formQuantity || !formSubcategoryId) {
         toast({
-          title: 'Error',
-          description: 'Please fill all required fields',
-          variant: 'destructive',
+          title: "Error",
+          description: "Please fill all required fields",
+          variant: "destructive",
         });
         return;
       }
-      
+
       const updatedProduct = {
         name: formName,
         description: formDescription,
@@ -231,162 +246,205 @@ const AdminProducts: React.FC = () => {
         quantity: parseInt(formQuantity),
         image_url: formImageUrl,
         subcategory_id: formSubcategoryId,
-        featured: formFeatured
+        featured: formFeatured,
       };
-      
+
       const { error } = await supabase
-        .from('products')
+        .from("products")
         .update(updatedProduct)
-        .eq('id', selectedProduct.id);
-      
+        .eq("id", selectedProduct.id);
+
       if (error) throw error;
-      
-      setProducts(products.map(p => p.id === selectedProduct.id ? { ...p, ...updatedProduct } : p));
+
+      setProducts(
+        products.map((p) =>
+          p.id === selectedProduct.id ? { ...p, ...updatedProduct } : p,
+        ),
+      );
       setIsEditDialogOpen(false);
       setSelectedProduct(null);
       resetForm();
-      
+
       toast({
-        title: 'Success',
-        description: 'Product updated successfully',
+        title: "Success",
+        description: "Product updated successfully",
       });
     } catch (error) {
-      console.error('Error updating product:', error);
+      console.error("Error updating product:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to update product',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to update product",
+        variant: "destructive",
       });
     }
   };
-  
+
   // Delete a product
   const handleDeleteProduct = async () => {
     try {
       if (!selectedProduct) return;
-      
+
       const { error } = await supabase
-        .from('products')
+        .from("products")
         .delete()
-        .eq('id', selectedProduct.id);
-      
+        .eq("id", selectedProduct.id);
+
       if (error) throw error;
-      
-      setProducts(products.filter(p => p.id !== selectedProduct.id));
+
+      setProducts(products.filter((p) => p.id !== selectedProduct.id));
       setIsDeleteDialogOpen(false);
       setSelectedProduct(null);
-      
+
       toast({
-        title: 'Success',
-        description: 'Product deleted successfully',
+        title: "Success",
+        description: "Product deleted successfully",
       });
     } catch (error) {
-      console.error('Error deleting product:', error);
+      console.error("Error deleting product:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to delete product',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive",
       });
     }
   };
-  
+
   // Add a new category
   const handleAddCategory = async () => {
     try {
       if (!formCategoryName) {
         toast({
-          title: 'Error',
-          description: 'Please enter a category name',
-          variant: 'destructive',
+          title: "Error",
+          description: "Please enter a category name",
+          variant: "destructive",
         });
         return;
       }
-      
+
+      console.log("Adding category:", formCategoryName);
+
       const { data, error } = await supabase
-        .from('categories')
-        .insert([{
-          name: formCategoryName,
-          description: formCategoryDescription
-        }])
+        .from("categories")
+        .insert([
+          {
+            name: formCategoryName,
+            description: formCategoryDescription,
+          },
+        ])
         .select();
-      
-      if (error) throw error;
-      
+
+      if (error) {
+        console.error("Error response from Supabase:", error);
+        throw error;
+      }
+
+      console.log("Category added successfully:", data);
       setCategories([...categories, data[0]]);
       setIsAddCategoryDialogOpen(false);
-      setFormCategoryName('');
-      setFormCategoryDescription('');
-      
+      setFormCategoryName("");
+      setFormCategoryDescription("");
+
       toast({
-        title: 'Success',
-        description: 'Category added successfully',
+        title: "Success",
+        description: "Category added successfully",
       });
-    } catch (error) {
-      console.error('Error adding category:', error);
+    } catch (error: any) {
+      console.error("Error adding category:", error);
+
+      let errorMessage = "Failed to add category";
+      if (error.code === "42501") {
+        errorMessage =
+          "Permission denied. You need admin privileges to add categories.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       toast({
-        title: 'Error',
-        description: 'Failed to add category',
-        variant: 'destructive',
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
       });
     }
   };
-  
+
   // Add a new subcategory
   const handleAddSubcategory = async () => {
     try {
       if (!formSubcategoryName || !formCategoryId) {
         toast({
-          title: 'Error',
-          description: 'Please fill all required fields',
-          variant: 'destructive',
+          title: "Error",
+          description: "Please fill all required fields",
+          variant: "destructive",
         });
         return;
       }
-      
+
+      console.log(
+        "Adding subcategory:",
+        formSubcategoryName,
+        "to category ID:",
+        formCategoryId,
+      );
+
       const { data, error } = await supabase
-        .from('subcategories')
-        .insert([{
-          name: formSubcategoryName,
-          description: formSubcategoryDescription,
-          category_id: formCategoryId
-        }])
+        .from("subcategories")
+        .insert([
+          {
+            name: formSubcategoryName,
+            description: formSubcategoryDescription,
+            category_id: formCategoryId,
+          },
+        ])
         .select();
-      
-      if (error) throw error;
-      
+
+      if (error) {
+        console.error("Error response from Supabase:", error);
+        throw error;
+      }
+
+      console.log("Subcategory added successfully:", data);
       setSubcategories([...subcategories, data[0]]);
       setIsAddSubcategoryDialogOpen(false);
-      setFormSubcategoryName('');
-      setFormSubcategoryDescription('');
-      setFormCategoryId('');
-      
+      setFormSubcategoryName("");
+      setFormSubcategoryDescription("");
+      setFormCategoryId("");
+
       toast({
-        title: 'Success',
-        description: 'Subcategory added successfully',
+        title: "Success",
+        description: "Subcategory added successfully",
       });
-    } catch (error) {
-      console.error('Error adding subcategory:', error);
+    } catch (error: any) {
+      console.error("Error adding subcategory:", error);
+
+      let errorMessage = "Failed to add subcategory";
+      if (error.code === "42501") {
+        errorMessage =
+          "Permission denied. You need admin privileges to add subcategories.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       toast({
-        title: 'Error',
-        description: 'Failed to add subcategory',
-        variant: 'destructive',
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
       });
     }
   };
-  
+
   const getSubcategoryName = (id: string) => {
-    const subcategory = subcategories.find(s => s.id === id);
-    return subcategory ? subcategory.name : 'Unknown';
+    const subcategory = subcategories.find((s) => s.id === id);
+    return subcategory ? subcategory.name : "Unknown";
   };
-  
+
   const getCategoryName = (subcategoryId: string) => {
-    const subcategory = subcategories.find(s => s.id === subcategoryId);
-    if (!subcategory) return 'Unknown';
-    
-    const category = categories.find(c => c.id === subcategory.category_id);
-    return category ? category.name : 'Unknown';
+    const subcategory = subcategories.find((s) => s.id === subcategoryId);
+    if (!subcategory) return "Unknown";
+
+    const category = categories.find((c) => c.id === subcategory.category_id);
+    return category ? category.name : "Unknown";
   };
-  
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -394,16 +452,24 @@ const AdminProducts: React.FC = () => {
       </div>
     );
   }
-  
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Manage Products</h1>
         <div className="flex gap-2">
-          <Button onClick={() => setIsAddCategoryDialogOpen(true)} variant="outline" size="sm">
+          <Button
+            onClick={() => setIsAddCategoryDialogOpen(true)}
+            variant="outline"
+            size="sm"
+          >
             Add Category
           </Button>
-          <Button onClick={() => setIsAddSubcategoryDialogOpen(true)} variant="outline" size="sm">
+          <Button
+            onClick={() => setIsAddSubcategoryDialogOpen(true)}
+            variant="outline"
+            size="sm"
+          >
             Add Subcategory
           </Button>
           <Button onClick={() => setIsAddDialogOpen(true)}>
@@ -412,7 +478,7 @@ const AdminProducts: React.FC = () => {
           </Button>
         </div>
       </div>
-      
+
       <div className="mb-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -424,51 +490,54 @@ const AdminProducts: React.FC = () => {
           />
         </div>
       </div>
-      
+
       <div className="rounded-md border">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-gray-50">
                 <th className="py-3 px-4 text-left font-medium">
-                  <button 
-                    className="flex items-center" 
-                    onClick={() => handleSort('name')}
+                  <button
+                    className="flex items-center"
+                    onClick={() => handleSort("name")}
                   >
                     Name
-                    {sortField === 'name' && (
-                      sortDirection === 'asc' ? 
-                        <ArrowUp className="ml-1 h-4 w-4" /> : 
+                    {sortField === "name" &&
+                      (sortDirection === "asc" ? (
+                        <ArrowUp className="ml-1 h-4 w-4" />
+                      ) : (
                         <ArrowDown className="ml-1 h-4 w-4" />
-                    )}
+                      ))}
                   </button>
                 </th>
                 <th className="py-3 px-4 text-left font-medium">Category</th>
                 <th className="py-3 px-4 text-left font-medium">Subcategory</th>
                 <th className="py-3 px-4 text-left font-medium">
-                  <button 
-                    className="flex items-center" 
-                    onClick={() => handleSort('price')}
+                  <button
+                    className="flex items-center"
+                    onClick={() => handleSort("price")}
                   >
                     Price (₦)
-                    {sortField === 'price' && (
-                      sortDirection === 'asc' ? 
-                        <ArrowUp className="ml-1 h-4 w-4" /> : 
+                    {sortField === "price" &&
+                      (sortDirection === "asc" ? (
+                        <ArrowUp className="ml-1 h-4 w-4" />
+                      ) : (
                         <ArrowDown className="ml-1 h-4 w-4" />
-                    )}
+                      ))}
                   </button>
                 </th>
                 <th className="py-3 px-4 text-left font-medium">
-                  <button 
-                    className="flex items-center" 
-                    onClick={() => handleSort('quantity')}
+                  <button
+                    className="flex items-center"
+                    onClick={() => handleSort("quantity")}
                   >
                     Quantity
-                    {sortField === 'quantity' && (
-                      sortDirection === 'asc' ? 
-                        <ArrowUp className="ml-1 h-4 w-4" /> : 
+                    {sortField === "quantity" &&
+                      (sortDirection === "asc" ? (
+                        <ArrowUp className="ml-1 h-4 w-4" />
+                      ) : (
                         <ArrowDown className="ml-1 h-4 w-4" />
-                    )}
+                      ))}
                   </button>
                 </th>
                 <th className="py-3 px-4 text-left font-medium">Featured</th>
@@ -480,11 +549,19 @@ const AdminProducts: React.FC = () => {
                 filteredProducts.map((product) => (
                   <tr key={product.id} className="border-b hover:bg-gray-50">
                     <td className="py-3 px-4">{product.name}</td>
-                    <td className="py-3 px-4">{getCategoryName(product.subcategory_id)}</td>
-                    <td className="py-3 px-4">{getSubcategoryName(product.subcategory_id)}</td>
-                    <td className="py-3 px-4">₦{product.price.toLocaleString()}</td>
+                    <td className="py-3 px-4">
+                      {getCategoryName(product.subcategory_id)}
+                    </td>
+                    <td className="py-3 px-4">
+                      {getSubcategoryName(product.subcategory_id)}
+                    </td>
+                    <td className="py-3 px-4">
+                      ₦{product.price.toLocaleString()}
+                    </td>
                     <td className="py-3 px-4">{product.quantity}</td>
-                    <td className="py-3 px-4">{product.featured ? 'Yes' : 'No'}</td>
+                    <td className="py-3 px-4">
+                      {product.featured ? "Yes" : "No"}
+                    </td>
                     <td className="py-3 px-4">
                       <div className="flex space-x-2">
                         <Button
@@ -514,8 +591,13 @@ const AdminProducts: React.FC = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="py-4 px-4 text-center text-gray-500">
-                    {searchTerm ? 'No products found matching your search' : 'No products available'}
+                  <td
+                    colSpan={7}
+                    className="py-4 px-4 text-center text-gray-500"
+                  >
+                    {searchTerm
+                      ? "No products found matching your search"
+                      : "No products available"}
                   </td>
                 </tr>
               )}
@@ -523,7 +605,7 @@ const AdminProducts: React.FC = () => {
           </table>
         </div>
       </div>
-      
+
       {/* Add Product Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
@@ -572,7 +654,10 @@ const AdminProducts: React.FC = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="subcategory">Subcategory *</Label>
-                <Select value={formSubcategoryId} onValueChange={setFormSubcategoryId}>
+                <Select
+                  value={formSubcategoryId}
+                  onValueChange={setFormSubcategoryId}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a subcategory" />
                   </SelectTrigger>
@@ -583,13 +668,15 @@ const AdminProducts: React.FC = () => {
                           {category.name}
                         </div>
                         {subcategories
-                          .filter(sub => sub.category_id === category.id)
-                          .map(subcategory => (
-                            <SelectItem key={subcategory.id} value={subcategory.id}>
+                          .filter((sub) => sub.category_id === category.id)
+                          .map((subcategory) => (
+                            <SelectItem
+                              key={subcategory.id}
+                              value={subcategory.id}
+                            >
                               {subcategory.name}
                             </SelectItem>
-                          ))
-                        }
+                          ))}
                       </React.Fragment>
                     ))}
                   </SelectContent>
@@ -612,7 +699,10 @@ const AdminProducts: React.FC = () => {
                 onChange={(e) => setFormFeatured(e.target.checked)}
                 className="h-4 w-4 rounded border-gray-300"
               />
-              <Label htmlFor="featured" className="text-sm font-medium leading-none">
+              <Label
+                htmlFor="featured"
+                className="text-sm font-medium leading-none"
+              >
                 Featured Product
               </Label>
             </div>
@@ -625,7 +715,7 @@ const AdminProducts: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* Edit Product Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
@@ -674,7 +764,10 @@ const AdminProducts: React.FC = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-subcategory">Subcategory *</Label>
-                <Select value={formSubcategoryId} onValueChange={setFormSubcategoryId}>
+                <Select
+                  value={formSubcategoryId}
+                  onValueChange={setFormSubcategoryId}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a subcategory" />
                   </SelectTrigger>
@@ -685,13 +778,15 @@ const AdminProducts: React.FC = () => {
                           {category.name}
                         </div>
                         {subcategories
-                          .filter(sub => sub.category_id === category.id)
-                          .map(subcategory => (
-                            <SelectItem key={subcategory.id} value={subcategory.id}>
+                          .filter((sub) => sub.category_id === category.id)
+                          .map((subcategory) => (
+                            <SelectItem
+                              key={subcategory.id}
+                              value={subcategory.id}
+                            >
                               {subcategory.name}
                             </SelectItem>
-                          ))
-                        }
+                          ))}
                       </React.Fragment>
                     ))}
                   </SelectContent>
@@ -714,7 +809,10 @@ const AdminProducts: React.FC = () => {
                 onChange={(e) => setFormFeatured(e.target.checked)}
                 className="h-4 w-4 rounded border-gray-300"
               />
-              <Label htmlFor="edit-featured" className="text-sm font-medium leading-none">
+              <Label
+                htmlFor="edit-featured"
+                className="text-sm font-medium leading-none"
+              >
                 Featured Product
               </Label>
             </div>
@@ -727,7 +825,7 @@ const AdminProducts: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* Delete Product Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
@@ -736,19 +834,26 @@ const AdminProducts: React.FC = () => {
           </DialogHeader>
           <div className="py-4">
             <p>Are you sure you want to delete "{selectedProduct?.name}"?</p>
-            <p className="text-sm text-gray-500 mt-2">This action cannot be undone.</p>
+            <p className="text-sm text-gray-500 mt-2">
+              This action cannot be undone.
+            </p>
           </div>
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
-            <Button variant="destructive" onClick={handleDeleteProduct}>Delete</Button>
+            <Button variant="destructive" onClick={handleDeleteProduct}>
+              Delete
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* Add Category Dialog */}
-      <Dialog open={isAddCategoryDialogOpen} onOpenChange={setIsAddCategoryDialogOpen}>
+      <Dialog
+        open={isAddCategoryDialogOpen}
+        onOpenChange={setIsAddCategoryDialogOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Category</DialogTitle>
@@ -780,9 +885,12 @@ const AdminProducts: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* Add Subcategory Dialog */}
-      <Dialog open={isAddSubcategoryDialogOpen} onOpenChange={setIsAddSubcategoryDialogOpen}>
+      <Dialog
+        open={isAddSubcategoryDialogOpen}
+        onOpenChange={setIsAddSubcategoryDialogOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Subcategory</DialogTitle>

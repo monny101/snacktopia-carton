@@ -1,5 +1,6 @@
 import React from "react";
 import { Navigate, Outlet, useLocation, Link } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   SidebarProvider,
@@ -49,17 +50,12 @@ const AdminLayout: React.FC = () => {
   if (!isAdmin) {
     console.log("User authenticated but not admin, profile:", profile);
     console.log("Current user role:", profile?.role);
+    toast({
+      title: "Access Denied",
+      description: "You need admin privileges to access this area",
+      variant: "destructive",
+    });
     return <Navigate to="/" />;
-  }
-
-  // If we're still loading, don't redirect yet
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-        <p className="ml-2">Loading...</p>
-      </div>
-    );
   }
 
   const handleLogout = () => {
