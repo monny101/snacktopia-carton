@@ -62,9 +62,6 @@ export const setupAdmin = async () => {
       console.log("Admin user may already exist, skipping creation");
       return true;
     }
-
-    console.log("Admin setup complete!");
-    return true;
   } catch (err) {
     console.error("Error in setupAdmin:", err);
     return false;
