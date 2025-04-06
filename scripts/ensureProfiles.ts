@@ -50,7 +50,7 @@ export const ensureProfiles = async () => {
           id: user.id,
           full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
           phone: user.user_metadata?.phone || null,
-          role: 'admin' // Set to admin role
+          role: 'admin' // Always set to admin role
         });
       
       if (insertError) {

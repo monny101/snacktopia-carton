@@ -37,6 +37,7 @@ export const setupAdmin = async () => {
       
       if (error) {
         console.error("Error creating admin user:", error);
+        return false;
       } else {
         console.log("Created admin user successfully:", data);
         
@@ -51,16 +52,21 @@ export const setupAdmin = async () => {
         
         if (profileError) {
           console.error("Error creating admin profile:", profileError);
+          return false;
         } else {
           console.log("Created admin profile successfully");
+          return true;
         }
       }
     } catch (err) {
       console.log("Admin user may already exist, skipping creation");
+      return true;
     }
 
     console.log("Admin setup complete!");
+    return true;
   } catch (err) {
     console.error("Error in setupAdmin:", err);
+    return false;
   }
 };

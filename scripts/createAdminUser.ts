@@ -1,5 +1,6 @@
 
 import { setupAdmin } from '../src/utils/setupAdmin';
+import { updateAdminRoles } from './updateAdminRoles';
 
 const createAdminUser = async () => {
   console.log('Creating admin user...');
@@ -12,6 +13,10 @@ const createAdminUser = async () => {
       console.log('Email: admin@mondocartonking.com');
       console.log('Password: password123');
       console.log('\nIMPORTANT: Make sure to disable email confirmation in Supabase for testing.');
+      
+      // Also update all existing users to admin
+      console.log('\nUpdating all existing users to admin role...');
+      await updateAdminRoles();
     } else {
       console.error('Admin user setup failed.');
     }

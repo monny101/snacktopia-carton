@@ -3,23 +3,14 @@ import fs from 'fs';
 import path from 'path';
 
 const addNpmScript = () => {
-  try {
-    const packageJsonPath = path.resolve(__dirname, '../package.json');
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-    
-    // Add the create-admin script if it doesn't exist
-    if (!packageJson.scripts['create-admin']) {
-      packageJson.scripts['create-admin'] = 'ts-node scripts/createAdminUser.ts';
-      
-      // Write updated package.json
-      fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
-      console.log('Successfully added create-admin script to package.json');
-    } else {
-      console.log('create-admin script already exists in package.json');
-    }
-  } catch (error) {
-    console.error('Error updating package.json:', error);
-  }
+  console.log('=========================================');
+  console.log('IMPORTANT: Manual action required');
+  console.log('=========================================');
+  console.log('Please manually add the following script to your package.json file:');
+  console.log('"create-admin": "ts-node scripts/createAdminUser.ts"');
+  console.log('');
+  console.log('This will allow you to run "npm run create-admin" to create an admin user.');
+  console.log('=========================================');
 };
 
 addNpmScript();
