@@ -1,11 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import ProductCard from '@/components/ProductCard';
+import { Loader2, Filter, SlidersHorizontal } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import ProductFilter from '@/components/ProductFilter';
-import ProductHeader from '@/components/ProductHeader';
-import ProductGrid from '@/components/ProductGrid';
-import { toast } from '@/hooks/use-toast';
 
 // Define types for product and category data
 interface Product {
@@ -59,16 +58,7 @@ const Products: React.FC = () => {
           .select('*')
           .order('name');
         
-        if (categoriesError) {
-          console.error('Error fetching categories:', categoriesError);
-          toast({
-            title: "Error",
-            description: "Could not load categories",
-            variant: "destructive"
-          });
-          throw categoriesError;
-        }
-        
+        if (categoriesError) throw categoriesError;
         setCategories(categoriesData || []);
         
         // Fetch subcategories
@@ -77,16 +67,7 @@ const Products: React.FC = () => {
           .select('*')
           .order('name');
         
-        if (subcategoriesError) {
-          console.error('Error fetching subcategories:', subcategoriesError);
-          toast({
-            title: "Error",
-            description: "Could not load subcategories",
-            variant: "destructive"
-          });
-          throw subcategoriesError;
-        }
-        
+        if (subcategoriesError) throw subcategoriesError;
         setSubcategories(subcategoriesData || []);
         
         // Fetch products
@@ -94,16 +75,7 @@ const Products: React.FC = () => {
           .from('products')
           .select('*');
           
-        if (productsError) {
-          console.error('Error fetching products:', productsError);
-          toast({
-            title: "Error",
-            description: "Could not load products",
-            variant: "destructive"
-          });
-          throw productsError;
-        }
-        
+        if (productsError) throw productsError;
         setProducts(productsData || []);
         
       } catch (error) {
@@ -177,10 +149,7 @@ const Products: React.FC = () => {
 
   // Helper function to get category name by ID
   const getCategoryName = (categoryId: string) => {
-    const foundSubcategory = subcategories.find(sub => sub.id === categoryId);
-    if (!foundSubcategory) return 'Unknown';
-    
-    const category = categories.find(cat => cat.id === foundSubcategory.category_id);
+    const category = categories.find(cat => cat.id === categoryId);
     return category ? category.name : 'Unknown';
   };
 
@@ -189,56 +158,165 @@ const Products: React.FC = () => {
     const subcategory = subcategories.find(sub => sub.id === subcategoryId);
     return subcategory ? subcategory.name : 'Unknown';
   };
-  
-  // Reset filters function
-  const resetFilters = () => {
-    setSelectedCategory(null);
-    setSelectedSubcategory(null);
-    setSearchTerm('');
-    setSortBy('default');
-  };
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">Products</h1>
       
-      {/* Search and Filter Section - Extracted to component */}
-      <ProductFilter 
-        categories={categories}
-        subcategories={subcategories}
-        selectedCategory={selectedCategory}
-        selectedSubcategory={selectedSubcategory}
-        searchTerm={searchTerm}
-        sortBy={sortBy}
-        showFilters={showFilters}
-        categorySubcategories={categorySubcategories}
-        setShowFilters={setShowFilters}
-        setSearchTerm={setSearchTerm}
-        setSortBy={setSortBy}
-        setSelectedCategory={setSelectedCategory}
-        setSelectedSubcategory={setSelectedSubcategory}
-        resetFilters={resetFilters}
-      />
+      {/* Search and Filter Section */}
+      <div className="bg-white rounded-lg shadow-md p-4 mb-8">
+        <div className="flex flex-col md:flex-row gap-4 mb-4">
+          {/* Search input */}
+          <div className="flex-1">
+            <input
+              type="text"
+              placeholder="Search products..."
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          {/* Sort options */}
+          <div className="flex items-center gap-2">
+            <label htmlFor="sort" className="text-sm font-medium whitespace-nowrap">Sort by:</label>
+            <select
+              id="sort"
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'default' | 'priceAsc' | 'priceDesc')}
+            >
+              <option value="default">Default</option>
+              <option value="priceAsc">Price: Low to High</option>
+              <option value="priceDesc">Price: High to Low</option>
+            </select>
+          </div>
+          
+          {/* Filter toggle button (mobile) */}
+          <Button 
+            variant="outline" 
+            className="md:hidden"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter className="mr-2 h-4 w-4" />
+            Filters
+          </Button>
+        </div>
+        
+        {/* Filter options - visible on desktop or when toggled on mobile */}
+        <div className={`md:flex ${showFilters ? 'block' : 'hidden md:block'}`}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:flex gap-4">
+            {/* Category filter */}
+            <div className="flex flex-col">
+              <label htmlFor="category" className="text-sm font-medium mb-1">Category</label>
+              <select
+                id="category"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={selectedCategory || ''}
+                onChange={(e) => setSelectedCategory(e.target.value || null)}
+              >
+                <option value="">All Categories</option>
+                {categories.map(category => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Subcategory filter - only visible when a category is selected */}
+            {selectedCategory && (
+              <div className="flex flex-col">
+                <label htmlFor="subcategory" className="text-sm font-medium mb-1">Subcategory</label>
+                <select
+                  id="subcategory"
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={selectedSubcategory || ''}
+                  onChange={(e) => setSelectedSubcategory(e.target.value || null)}
+                >
+                  <option value="">All Subcategories</option>
+                  {categorySubcategories.map(subcategory => (
+                    <option key={subcategory.id} value={subcategory.id}>
+                      {subcategory.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
+            {/* Reset filters button */}
+            <div className="flex items-end">
+              <Button 
+                variant="ghost" 
+                onClick={() => {
+                  setSelectedCategory(null);
+                  setSelectedSubcategory(null);
+                  setSearchTerm('');
+                  setSortBy('default');
+                }}
+                className="text-blue-500 hover:text-blue-700"
+              >
+                Reset Filters
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
       
       {/* Results section */}
       <div>
-        {/* Products header - Extracted to component */}
-        <ProductHeader 
-          loading={loading}
-          filteredProducts={filteredProducts}
-          selectedCategory={selectedCategory}
-          selectedSubcategory={selectedSubcategory}
-          getCategoryName={getCategoryName}
-          getSubcategoryName={getSubcategoryName}
-        />
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">
+            {loading 
+              ? 'Loading products...' 
+              : filteredProducts.length === 0 
+                ? 'No products found' 
+                : `${filteredProducts.length} products found`}
+          </h2>
+          
+          {/* Display active filters */}
+          <div className="flex items-center gap-2">
+            {selectedCategory && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500 text-white">
+                {getCategoryName(selectedCategory)}
+              </span>
+            )}
+            {selectedSubcategory && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500 text-blue-900">
+                {getSubcategoryName(selectedSubcategory)}
+              </span>
+            )}
+          </div>
+        </div>
         
-        {/* Product grid - Extracted to component */}
-        <ProductGrid 
-          loading={loading}
-          filteredProducts={filteredProducts}
-          getCategoryName={getCategoryName}
-          getSubcategoryName={getSubcategoryName}
-        />
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 text-center">
+            <SlidersHorizontal className="h-12 w-12 text-gray-400 mb-4" />
+            <p className="text-xl font-medium text-gray-500 mb-2">No products found</p>
+            <p className="text-gray-400">Try adjusting your filters or search term</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {filteredProducts.map(product => (
+              <ProductCard 
+                key={product.id} 
+                product={{
+                  id: product.id,
+                  name: product.name,
+                  price: product.price,
+                  image: product.image_url || 'https://placehold.co/400x300?text=No+Image',
+                  description: product.description || '',
+                  category: getCategoryName(subcategories.find(sub => sub.id === product.subcategory_id)?.category_id || ''),
+                  subcategory: getSubcategoryName(product.subcategory_id || '')
+                }} 
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
