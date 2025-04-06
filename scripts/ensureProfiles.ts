@@ -1,12 +1,12 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "../src/integrations/supabase/client";
 
 /**
  * This script ensures that all users have profiles
  * and that the handle_new_user function is set up correctly
  */
 export const ensureProfiles = async () => {
-  // Update the handle_new_user function to ensure new users get the admin role
+  // Update the handle_new_user function to ensure new users get the customer role
   const { error: functionError } = await supabase.rpc('update_handle_new_user_function');
   
   if (functionError) {
@@ -43,26 +43,34 @@ export const ensureProfiles = async () => {
     if (profileError) {
       console.log(`Creating profile for user ${user.id}`);
       
-      // Create profile with admin role
+      // Determine appropriate role
+      let role = 'customer'; // Default role
+      
+      // Set special admin for a specific email
+      if (user.email === 'admin@mondocartonking.com') {
+        role = 'admin';
+      }
+      
+      // Create profile with appropriate role
       const { error: insertError } = await supabase
         .from('profiles')
         .insert({
           id: user.id,
           full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
           phone: user.user_metadata?.phone || null,
-          role: 'admin' // Always set to admin role
+          role: role
         });
       
       if (insertError) {
         console.error(`Error creating profile for user ${user.id}:`, insertError);
       } else {
-        console.log(`Created profile for user ${user.id} with admin role`);
+        console.log(`Created profile for user ${user.id} with ${role} role`);
       }
     } else {
-      console.log(`User ${user.id} already has a profile`);
+      console.log(`User ${user.id} already has a profile with role: ${profile.role}`);
       
-      // Ensure the user has admin role
-      if (profile.role !== 'admin') {
+      // Check for special admin email
+      if (user.email === 'admin@mondocartonking.com' && profile.role !== 'admin') {
         console.log(`Updating user ${user.id} to admin role`);
         
         const { error: updateError } = await supabase
