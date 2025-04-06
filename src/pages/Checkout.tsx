@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth/AuthContext';
 import { Loader2, MapPin, CreditCard, TruckIcon, Store } from 'lucide-react';
 
 type DeliveryMethod = 'delivery' | 'pickup';

@@ -5,8 +5,8 @@ export const setupAdmin = async () => {
   try {
     console.log("Setting up admin roles and functions...");
 
-    // Create or replace the handle_new_user function to assign admin role by default
-    const { error: functionError } = await supabase.rpc('create_handle_new_user_function');
+    // Create or replace the handle_new_user function
+    const { error: functionError } = await supabase.rpc('create_handle_new_user_function', {});
     
     if (functionError) {
       console.error("Error creating handle_new_user function:", functionError);
@@ -15,7 +15,7 @@ export const setupAdmin = async () => {
     }
 
     // Create SQL functions to update and create the handle_new_user function
-    const { error: createFunctionsError } = await supabase.rpc('create_admin_functions');
+    const { error: createFunctionsError } = await supabase.rpc('create_admin_functions', {});
     
     if (createFunctionsError) {
       console.error("Error creating admin functions:", createFunctionsError);

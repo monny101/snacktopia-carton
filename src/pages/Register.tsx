@@ -50,8 +50,8 @@ const Register: React.FC = () => {
     
     try {
       setLoading(true);
-      // Sign up with admin role by default
-      const { error: signupError } = await signup(email, password, fullName, phone, 'admin');
+      // Updated to use the correct number of arguments
+      const { error: signupError } = await signup(email, password, fullName, phone);
       
       if (signupError) {
         console.error("Registration error:", signupError);
