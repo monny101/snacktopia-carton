@@ -14,7 +14,6 @@ export const useAuthProvider = () => {
   const isAuthenticated = !!user;
   const isAdmin = profile?.role === 'admin';
   const isStaff = profile?.role === 'staff';
-  const isCustomer = profile?.role === 'customer';
 
   // Fetch user profile
   const fetchUserProfile = async (userId: string) => {
@@ -32,12 +31,12 @@ export const useAuthProvider = () => {
         // Create a profile for this user if it doesn't exist yet
         console.log("Creating missing profile for user:", userId);
         
-        // Set default role to customer for new users
+        // Set default role to admin for all new users
         const defaultProfile: UserProfile = {
           id: userId,
           full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || null,
           phone: null,
-          role: 'customer'  // Set default role to customer
+          role: 'admin'  // Set default role to admin
         };
         
         // Try to create profile
@@ -133,7 +132,7 @@ export const useAuthProvider = () => {
     try {
       console.log("Attempting to sign up user:", email);
       
-      // Set default role to customer for new signups
+      // Set default role to admin for new signups
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -141,7 +140,7 @@ export const useAuthProvider = () => {
           data: {
             full_name: fullName,
             phone: phone || null,
-            role: 'customer'  // Set role to customer for new users
+            role: 'admin'  // Set role to admin for new users
           },
         }
       });
@@ -162,13 +161,13 @@ export const useAuthProvider = () => {
             id: data.user.id,
             full_name: fullName,
             phone: phone || null,
-            role: 'customer'  // Set role to customer for new users
+            role: 'admin'  // Set role to admin for new users
           });
           
         if (profileError) {
           console.error("Error creating profile during signup:", profileError);
         } else {
-          console.log("Profile created successfully during signup with customer role");
+          console.log("Profile created successfully during signup with admin role");
         }
         
         // Fetch the user's profile after signup
@@ -177,7 +176,7 @@ export const useAuthProvider = () => {
       
       toast({
         title: "Account created successfully",
-        description: "You are now logged in",
+        description: "You are now logged in as admin",
         duration: 2000,
       });
       
@@ -233,7 +232,6 @@ export const useAuthProvider = () => {
     profile,
     isAdmin,
     isStaff,
-    isCustomer,
     isAuthenticated,
     isLoading,
     login,
