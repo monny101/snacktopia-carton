@@ -38,6 +38,7 @@ export const setupProductStorage = async () => {
         // Create a public policy for the bucket
         try {
           // This needs to be run by an admin, may fail for regular users
+          function setupStorage(policy: "check_user_role" | "is_admin" | "is_staff_or_admin" | "create_storage_policy")
           const { error: policyError } = await supabase.rpc(
             'create_storage_policy',
             { 
