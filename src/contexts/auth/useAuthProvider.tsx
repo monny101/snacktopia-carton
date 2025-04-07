@@ -33,12 +33,19 @@ export const useAuthProvider = () => {
         console.log("Creating missing profile for user:", userId);
         
         // Set default role to customer for new users
+        const defaultRole = 'customer'; // Default role is always customer
         const defaultProfile: UserProfile = {
           id: userId,
           full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || null,
-          phone: null,
-          role: 'customer'  // Set default role to customer
+          phone: user?.user_metadata?.phone || null,
+          role: defaultRole
         };
+        
+        // Special case for admin@mondocartonking.com
+        if (user?.email === 'admin@mondocartonking.com') {
+          defaultProfile.role = 'admin';
+          console.log("Setting admin role for admin@mondocartonking.com");
+        }
         
         // Try to create profile
         try {
@@ -66,6 +73,22 @@ export const useAuthProvider = () => {
 
       console.log("Fetched profile:", data);
       setProfile(data as UserProfile);
+      
+      // Special case for admin@mondocartonking.com - always ensure admin role
+      if (user?.email === 'admin@mondocartonking.com' && data.role !== 'admin') {
+        console.log("Admin email detected but profile doesn't have admin role. Updating...");
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ role: 'admin' })
+          .eq('id', userId);
+          
+        if (updateError) {
+          console.error("Error updating admin role:", updateError);
+        } else {
+          console.log("Updated to admin role successfully");
+          setProfile({ ...(data as UserProfile), role: 'admin' });
+        }
+      }
     } catch (err) {
       console.error('Unexpected error fetching profile:', err);
     }
@@ -133,6 +156,9 @@ export const useAuthProvider = () => {
     try {
       console.log("Attempting to sign up user:", email);
       
+      // Special case for admin@mondocartonking.com
+      const defaultRole = email === 'admin@mondocartonking.com' ? 'admin' : 'customer';
+      
       // Set default role to customer for new signups
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -141,7 +167,7 @@ export const useAuthProvider = () => {
           data: {
             full_name: fullName,
             phone: phone || null,
-            role: 'customer'  // Set role to customer for new users
+            role: defaultRole
           },
         }
       });
@@ -162,13 +188,13 @@ export const useAuthProvider = () => {
             id: data.user.id,
             full_name: fullName,
             phone: phone || null,
-            role: 'customer'  // Set role to customer for new users
+            role: defaultRole
           });
           
         if (profileError) {
           console.error("Error creating profile during signup:", profileError);
         } else {
-          console.log("Profile created successfully during signup with customer role");
+          console.log(`Profile created successfully during signup with ${defaultRole} role`);
         }
         
         // Fetch the user's profile after signup

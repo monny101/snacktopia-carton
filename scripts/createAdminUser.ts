@@ -14,9 +14,13 @@ const createAdminUser = async () => {
       console.log('Password: password123');
       console.log('\nIMPORTANT: Make sure to disable email confirmation in Supabase for testing.');
       
-      // Also update all existing users to admin
-      console.log('\nUpdating all existing users to admin role...');
+      // Update roles to ensure proper permissions
+      console.log('\nUpdating user roles...');
       await updateAdminRoles();
+      
+      console.log('\nSETUP COMPLETE: Your admin user is ready to use!');
+      console.log('Remember that only admin@mondocartonking.com has admin privileges.');
+      console.log('All other users will be assigned customer role by default.');
     } else {
       console.error('Admin user setup failed.');
     }

@@ -16,6 +16,8 @@ const runSetup = async () => {
   await updateAdminRoles();
   
   console.log("Setup complete!");
+  console.log("Important: Only admin@mondocartonking.com has admin privileges.");
+  console.log("All other users are assigned the customer role by default.");
 };
 
 runSetup().catch(console.error);

@@ -2,10 +2,10 @@
 import { supabase } from '../src/integrations/supabase/client';
 
 /**
- * This script updates all existing users to have admin role
- * Run with: ts-node scripts/updateAdminRoles.ts
+ * This script ensures all regular users have customer role
+ * and sets up a specific admin user
  */
-const updateAdminRoles = async () => {
+export const updateAdminRoles = async () => {
   try {
     console.log("Fetching all users...");
     const { data: users, error: usersError } = await supabase.auth.admin.listUsers();
@@ -20,6 +20,11 @@ const updateAdminRoles = async () => {
     // Update all users to have customer role in their user metadata
     // This is more appropriate for a production environment
     for (const user of users.users) {
+      // Skip the admin user
+      if (user.email === 'admin@mondocartonking.com') {
+        continue;
+      }
+      
       console.log(`Updating user ${user.email} to customer role...`);
       
       // Update user metadata to include customer role
@@ -61,36 +66,37 @@ const updateAdminRoles = async () => {
       } else {
         console.log(`Updating existing profile for user ${user.email}`);
         
-        // Update existing profile to customer role
-        const { error: updateProfileError } = await supabase
-          .from('profiles')
-          .update({ role: 'customer' })
-          .eq('id', user.id);
-        
-        if (updateProfileError) {
-          console.error(`Error updating profile for user ${user.email}:`, updateProfileError);
-        } else {
-          console.log(`Updated profile for user ${user.email} to customer role`);
+        // Update existing profile to customer role (if not admin)
+        if (profile.role !== 'admin') {
+          const { error: updateProfileError } = await supabase
+            .from('profiles')
+            .update({ role: 'customer' })
+            .eq('id', user.id);
+          
+          if (updateProfileError) {
+            console.error(`Error updating profile for user ${user.email}:`, updateProfileError);
+          } else {
+            console.log(`Updated profile for user ${user.email} to customer role`);
+          }
         }
       }
     }
     
-    console.log("Finished updating all users to customer role");
+    console.log("Finished updating regular users to customer role");
 
     // Set up a specific admin user
     console.log("Setting up admin user...");
     const adminEmail = 'admin@mondocartonking.com';
     
     // Check if admin already exists
-    const { data: existingAdmin, error: findError } = await supabase
+    const { data: existingAdmins, error: findError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('role', 'admin')
-      .limit(1);
+      .eq('role', 'admin');
       
     if (findError) {
       console.error("Error checking for admin:", findError);
-    } else if (!existingAdmin || existingAdmin.length === 0) {
+    } else if (!existingAdmins || existingAdmins.length === 0) {
       console.log("No admin found, attempting to create one");
       
       // Try to find the user first
@@ -166,7 +172,42 @@ const updateAdminRoles = async () => {
         }
       }
     } else {
-      console.log("Admin user already exists:", existingAdmin[0]);
+      console.log("Admin user(s) already exist:", existingAdmins.length);
+      
+      // Make sure admin@mondocartonking.com has admin role
+      const { data: users, error: searchError } = await supabase.auth.admin.listUsers();
+      
+      if (searchError) {
+        console.error("Error searching for users:", searchError);
+      } else {
+        const adminUser = users.users.find(u => u.email === adminEmail);
+        
+        if (adminUser) {
+          console.log("Found admin@mondocartonking.com user, ensuring admin role");
+          
+          // Update user to admin role
+          const { error: updateError } = await supabase.auth.admin.updateUserById(
+            adminUser.id,
+            { user_metadata: { ...adminUser.user_metadata, role: 'admin' } }
+          );
+          
+          if (updateError) {
+            console.error("Error updating admin user:", updateError);
+          } else {
+            // Update profile to admin role
+            const { error: profileUpdateError } = await supabase
+              .from('profiles')
+              .update({ role: 'admin' })
+              .eq('id', adminUser.id);
+              
+            if (profileUpdateError) {
+              console.error("Error updating admin profile:", profileUpdateError);
+            } else {
+              console.log("Updated user to admin role successfully");
+            }
+          }
+        }
+      }
     }
   } catch (err) {
     console.error("Error in updateAdminRoles:", err);
