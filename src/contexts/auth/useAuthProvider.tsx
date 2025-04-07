@@ -31,12 +31,21 @@ export const useAuthProvider = () => {
         // Create a profile for this user if it doesn't exist yet
         console.log("Creating missing profile for user:", userId);
         
-        // Set default role to customer for new users
+        // Get user metadata to determine role
+        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
+        let role = 'customer'; // Default role
+        
+        if (!userError && userData?.user?.user_metadata?.role) {
+          role = userData.user.user_metadata.role;
+          console.log("Found role in user metadata:", role);
+        }
+        
+        // Create profile with correct role
         const defaultProfile: UserProfile = {
           id: userId,
           full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || null,
-          phone: null,
-          role: 'customer'  // Set default role to customer
+          phone: user?.user_metadata?.phone || null,
+          role: role
         };
         
         // Try to create profile
@@ -115,6 +124,12 @@ export const useAuthProvider = () => {
       if (error) throw error;
       
       console.log("Login successful:", data.user?.id);
+      
+      // Force fetch profile after login to ensure we have the correct role
+      if (data.user) {
+        await fetchUserProfile(data.user.id);
+      }
+      
       toast({
         title: "Logged in successfully",
         description: "Welcome back!",

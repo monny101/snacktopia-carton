@@ -5,9 +5,8 @@ export const setupAdmin = async () => {
   try {
     console.log("Setting up admin roles and functions...");
 
-    // Create or replace the handle_new_user function
-    // Fix: Use any as type to bypass TypeScript error with function names
-    const { error: functionError } = await supabase.rpc('create_handle_new_user_function' as any, {});
+    // Create or replace the handle_new_user function using any type to bypass TypeScript errors
+    const { error: functionError } = await supabase.rpc('create_handle_new_user_function' as any);
     
     if (functionError) {
       console.error("Error creating handle_new_user function:", functionError);
@@ -16,7 +15,7 @@ export const setupAdmin = async () => {
     }
 
     // Create SQL functions to update and create the handle_new_user function
-    const { error: createFunctionsError } = await supabase.rpc('create_admin_functions' as any, {});
+    const { error: createFunctionsError } = await supabase.rpc('create_admin_functions' as any);
     
     if (createFunctionsError) {
       console.error("Error creating admin functions:", createFunctionsError);
@@ -26,7 +25,7 @@ export const setupAdmin = async () => {
 
     // Try to create a hardcoded admin user (this is for initial setup)
     try {
-      // Fixed TypeScript error by properly checking the type
+      // Use properly typed method
       const { data, error } = await supabase.auth.admin.createUser({
         email: 'admin@mondocartonking.com',
         password: 'password123',

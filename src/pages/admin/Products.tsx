@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -23,6 +22,7 @@ import { Pencil, Trash, Plus, Search, ArrowUp, ArrowDown } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2 } from 'lucide-react';
+import { ImageUpload } from '@/components/ui/image-upload';
 
 interface Category {
   id: string;
@@ -63,7 +63,6 @@ const AdminProducts: React.FC = () => {
   const [sortField, setSortField] = useState<string>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
-  // Form states
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formPrice, setFormPrice] = useState('');
@@ -78,13 +77,11 @@ const AdminProducts: React.FC = () => {
   const [formSubcategoryDescription, setFormSubcategoryDescription] = useState('');
   const [formCategoryId, setFormCategoryId] = useState('');
   
-  // Fetch products, categories, and subcategories
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         
-        // Fetch categories
         const { data: categoriesData, error: categoriesError } = await supabase
           .from('categories')
           .select('*')
@@ -93,7 +90,6 @@ const AdminProducts: React.FC = () => {
         if (categoriesError) throw categoriesError;
         setCategories(categoriesData || []);
         
-        // Fetch subcategories
         const { data: subcategoriesData, error: subcategoriesError } = await supabase
           .from('subcategories')
           .select('*')
@@ -102,7 +98,6 @@ const AdminProducts: React.FC = () => {
         if (subcategoriesError) throw subcategoriesError;
         setSubcategories(subcategoriesData || []);
         
-        // Fetch products
         const { data, error } = await supabase
           .from('products')
           .select('*')
@@ -125,7 +120,6 @@ const AdminProducts: React.FC = () => {
     fetchData();
   }, [sortField, sortDirection]);
   
-  // Handle sort toggle
   const handleSort = (field: string) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -135,13 +129,11 @@ const AdminProducts: React.FC = () => {
     }
   };
   
-  // Filter products based on search term
   const filteredProducts = products.filter(product => 
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  // Reset form fields
   const resetForm = () => {
     setFormName('');
     setFormDescription('');
@@ -152,7 +144,6 @@ const AdminProducts: React.FC = () => {
     setFormFeatured(false);
   };
   
-  // Set form fields for editing
   const setFormForEdit = (product: Product) => {
     setFormName(product.name);
     setFormDescription(product.description || '');
@@ -163,7 +154,6 @@ const AdminProducts: React.FC = () => {
     setFormFeatured(product.featured || false);
   };
   
-  // Add a new product
   const handleAddProduct = async () => {
     try {
       if (!formName || !formPrice || !formQuantity || !formSubcategoryId) {
@@ -210,7 +200,6 @@ const AdminProducts: React.FC = () => {
     }
   };
   
-  // Update a product
   const handleUpdateProduct = async () => {
     try {
       if (!selectedProduct) return;
@@ -260,7 +249,6 @@ const AdminProducts: React.FC = () => {
     }
   };
   
-  // Delete a product
   const handleDeleteProduct = async () => {
     try {
       if (!selectedProduct) return;
@@ -290,7 +278,6 @@ const AdminProducts: React.FC = () => {
     }
   };
   
-  // Add a new category
   const handleAddCategory = async () => {
     try {
       if (!formCategoryName) {
@@ -331,7 +318,6 @@ const AdminProducts: React.FC = () => {
     }
   };
   
-  // Add a new subcategory
   const handleAddSubcategory = async () => {
     try {
       if (!formSubcategoryName || !formCategoryId) {
@@ -524,7 +510,6 @@ const AdminProducts: React.FC = () => {
         </div>
       </div>
       
-      {/* Add Product Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -597,11 +582,10 @@ const AdminProducts: React.FC = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="image">Image URL</Label>
-              <Input
-                id="image"
+              <Label htmlFor="image">Product Image</Label>
+              <ImageUpload
                 value={formImageUrl}
-                onChange={(e) => setFormImageUrl(e.target.value)}
+                onChange={setFormImageUrl}
               />
             </div>
             <div className="flex items-center space-x-2">
@@ -626,7 +610,6 @@ const AdminProducts: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Edit Product Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -699,11 +682,10 @@ const AdminProducts: React.FC = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-image">Image URL</Label>
-              <Input
-                id="edit-image"
+              <Label htmlFor="edit-image">Product Image</Label>
+              <ImageUpload
                 value={formImageUrl}
-                onChange={(e) => setFormImageUrl(e.target.value)}
+                onChange={setFormImageUrl}
               />
             </div>
             <div className="flex items-center space-x-2">
@@ -728,7 +710,6 @@ const AdminProducts: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Delete Product Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -747,7 +728,6 @@ const AdminProducts: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Add Category Dialog */}
       <Dialog open={isAddCategoryDialogOpen} onOpenChange={setIsAddCategoryDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -781,7 +761,6 @@ const AdminProducts: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Add Subcategory Dialog */}
       <Dialog open={isAddSubcategoryDialogOpen} onOpenChange={setIsAddSubcategoryDialogOpen}>
         <DialogContent>
           <DialogHeader>
