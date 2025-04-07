@@ -3,100 +3,71 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const setupAdmin = async () => {
   try {
-    console.log("Setting up admin roles and functions...");
+    console.log("Setting up admin roles...");
 
-    // Create or replace the handle_new_user function using any type to bypass TypeScript errors
-    const { error: functionError } = await supabase.rpc('create_handle_new_user_function' as any);
+    // Check if admin role exists in profiles
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', 'customer')
+      .limit(1);
     
-    if (functionError) {
-      console.error("Error creating handle_new_user function:", functionError);
-    } else {
-      console.log("Created handle_new_user function successfully");
+    if (profileError) {
+      console.error("Error checking admin profiles:", profileError);
+      return false;
     }
-
-    // Create SQL functions to update and create the handle_new_user function
-    const { error: createFunctionsError } = await supabase.rpc('create_admin_functions' as any);
     
-    if (createFunctionsError) {
-      console.error("Error creating admin functions:", createFunctionsError);
-    } else {
-      console.log("Created admin functions successfully");
-    }
-
-    // Try to create a hardcoded admin user (this is for initial setup)
-    try {
-      // Use properly typed method
-      const { data, error } = await supabase.auth.admin.createUser({
-        email: 'admin@mondocartonking.com',
-        password: 'password123',
-        email_confirm: true,
-        user_metadata: {
-          full_name: 'Admin User',
-          role: 'admin'
-        }
-      });
+    console.log("Admin check result:", profileData);
+    
+    // If no admin exists, try to create one
+    if (!profileData || profileData.length === 0) {
+      console.log("No admin found, attempting to create one");
       
-      if (error) {
-        console.error("Error creating admin user:", error);
-        return false;
-      } else {
-        console.log("Created admin user successfully:", data);
-        
-        // Create the profile for the admin user
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: data.user.id,
-            full_name: 'Admin User',
-            role: 'admin'
-          });
-        
-        if (profileError) {
-          console.error("Error creating admin profile:", profileError);
-          return false;
-        } else {
-          console.log("Created admin profile successfully");
-          
-          // Also create a staff user for testing
-          const { data: staffData, error: staffError } = await supabase.auth.admin.createUser({
-            email: 'staff@mondocartonking.com',
-            password: 'password123',
-            email_confirm: true,
-            user_metadata: {
-              full_name: 'Staff User',
-              role: 'staff'
-            }
-          });
-          
-          if (staffError) {
-            console.error("Error creating staff user:", staffError);
-            // Continue anyway since admin was created successfully
-          } else {
-            console.log("Created staff user successfully");
-            
-            // Create the profile for the staff user
-            const { error: staffProfileError } = await supabase
-              .from('profiles')
-              .upsert({
-                id: staffData.user.id,
-                full_name: 'Staff User',
-                role: 'staff'
-              });
-            
-            if (staffProfileError) {
-              console.error("Error creating staff profile:", staffProfileError);
-            } else {
-              console.log("Created staff profile successfully");
+      try {
+        // Create a hardcoded admin user for initial setup
+        const { data: userData, error: userError } = await supabase.auth.signUp({
+          email: 'admin@mondocartonking.com',
+          password: 'password123',
+          options: {
+            data: {
+              full_name: 'Admin User',
+              role: 'customer'
             }
           }
+        });
+        
+        if (userError) {
+          console.error("Error creating admin user:", userError);
+          return false;
+        } 
+        
+        console.log("Created admin user successfully");
+        
+        // Create profile for the admin user
+        if (userData.user) {
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: userData.user.id,
+              full_name: 'Admin User',
+              role: 'customer'
+            });
           
-          return true;
+          if (insertError) {
+            console.error("Error creating admin profile:", insertError);
+            return false;
+          } else {
+            console.log("Created admin profile successfully");
+            return true;
+          }
         }
+      } catch (err) {
+        console.log("Admin user may already exist, skipping creation");
+        return true;
       }
-    } catch (err) {
-      console.log("Admin user may already exist, skipping creation");
-      return true;
     }
+    
+    return true;
   } catch (err) {
     console.error("Error in setupAdmin:", err);
     return false;

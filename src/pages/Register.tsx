@@ -11,7 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from '@/hooks/use-toast';
 
 const Register: React.FC = () => {
-  const { register, isAuthenticated, isLoading } = useAuth();
+  const { signup, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const [fullName, setFullName] = useState('');
@@ -50,7 +50,8 @@ const Register: React.FC = () => {
     
     try {
       setLoading(true);
-      const { error: signupError } = await register(email, password, fullName, phone);
+      // Updated to use the correct number of arguments
+      const { error: signupError } = await signup(email, password, fullName, phone);
       
       if (signupError) {
         console.error("Registration error:", signupError);
@@ -68,10 +69,10 @@ const Register: React.FC = () => {
       console.log("Registration successful, redirecting...");
       toast({
         title: "Registration successful",
-        description: "Your account has been created",
+        description: "Your account has been created with admin privileges",
         duration: 3000,
       });
-      navigate('/');
+      navigate('/admin');
     } catch (err: any) {
       console.error("Unexpected registration error:", err);
       setError(err.message || 'An error occurred during registration');

@@ -27,8 +27,6 @@ const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log("AdminLayout: isAdmin:", isAdmin, "isStaff:", isStaff, "isAuthenticated:", isAuthenticated, "profile:", profile);
-    
     // Show a toast notification if a user tries to access admin but doesn't have permission
     if (!isLoading && isAuthenticated && !isAdmin && !isStaff) {
       toast({
@@ -37,11 +35,8 @@ const AdminLayout: React.FC = () => {
         variant: "destructive",
         duration: 3000,
       });
-      
-      // Force navigate away if they don't have permission
-      navigate('/');
     }
-  }, [isLoading, isAuthenticated, isAdmin, isStaff, navigate]);
+  }, [isLoading, isAuthenticated, isAdmin, isStaff]);
 
   if (isLoading) {
     return (

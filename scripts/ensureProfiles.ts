@@ -6,13 +6,13 @@ import { supabase } from "@/integrations/supabase/client";
  * and that the handle_new_user function is set up correctly
  */
 export const ensureProfiles = async () => {
-  // Update the handle_new_user function to ensure new users get the correct role
-  const { error: functionError } = await supabase.rpc('update_handle_new_user_function' as any);
+  // Update the handle_new_user function to ensure new users get the admin role
+  const { error: functionError } = await supabase.rpc('update_handle_new_user_function');
   
   if (functionError) {
     console.error("Error updating handle_new_user function:", functionError);
     // Create the function if it doesn't exist
-    const { error: createFunctionError } = await supabase.rpc('create_handle_new_user_function' as any);
+    const { error: createFunctionError } = await supabase.rpc('create_handle_new_user_function');
     if (createFunctionError) {
       console.error("Error creating handle_new_user function:", createFunctionError);
     } else {
@@ -41,60 +41,39 @@ export const ensureProfiles = async () => {
       .single();
     
     if (profileError) {
-      console.log(`Creating profile for user ${user.email || user.id}`);
+      console.log(`Creating profile for user ${user.id}`);
       
-      // Get role from user metadata or default to customer
-      const role = user.user_metadata?.role || 'customer';
-      
-      // Create profile with role
+      // Create profile with admin role
       const { error: insertError } = await supabase
         .from('profiles')
         .insert({
           id: user.id,
           full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
           phone: user.user_metadata?.phone || null,
-          role: role
+          role: 'admin' // Always set to admin role
         });
       
       if (insertError) {
-        console.error(`Error creating profile for user ${user.email || user.id}:`, insertError);
+        console.error(`Error creating profile for user ${user.id}:`, insertError);
       } else {
-        console.log(`Created profile for user ${user.email || user.id} with role: ${role}`);
+        console.log(`Created profile for user ${user.id} with admin role`);
       }
     } else {
-      console.log(`User ${user.email || user.id} already has a profile with role: ${profile.role}`);
+      console.log(`User ${user.id} already has a profile`);
       
-      // Check if the user role in metadata matches profile role
-      if (user.user_metadata?.role && user.user_metadata.role !== profile.role) {
-        console.log(`Role mismatch for user ${user.email || user.id}: metadata=${user.user_metadata.role}, profile=${profile.role}`);
-        console.log(`Updating profile role to match user metadata...`);
+      // Ensure the user has admin role
+      if (profile.role !== 'admin') {
+        console.log(`Updating user ${user.id} to admin role`);
         
-        // Update profile to match metadata
         const { error: updateError } = await supabase
           .from('profiles')
-          .update({
-            role: user.user_metadata.role
-          })
+          .update({ role: 'admin' })
           .eq('id', user.id);
         
         if (updateError) {
-          console.error(`Error updating profile for user ${user.email || user.id}:`, updateError);
+          console.error(`Error updating profile for user ${user.id}:`, updateError);
         } else {
-          console.log(`Updated profile role for user ${user.email || user.id} to ${user.user_metadata.role}`);
-        }
-      } else if (!user.user_metadata?.role && profile.role !== 'customer') {
-        console.log(`Updating user metadata for ${user.email || user.id} to match profile role: ${profile.role}`);
-        
-        // Update user metadata to match profile
-        const { error: updateError } = await supabase.auth.admin.updateUserById(
-          user.id,
-          { user_metadata: { ...user.user_metadata, role: profile.role } }
-        );
-        
-        if (updateError) {
-          console.error(`Error updating user metadata for ${user.email || user.id}:`, updateError);
-        } else {
-          console.log(`Updated user metadata for ${user.email || user.id} to role: ${profile.role}`);
+          console.log(`Updated profile for user ${user.id} to admin role`);
         }
       }
     }
