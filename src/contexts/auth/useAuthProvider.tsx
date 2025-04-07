@@ -1,17 +1,20 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { AuthUser, UserRole } from './types';
+import { AuthUser, UserRole, UserProfile } from './types';
+import { Session } from '@supabase/supabase-js';
 
 export const useAuthProvider = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch the user's profile details including their role
   const fetchUserProfile = useCallback(async (userId: string) => {
     try {
-      const { data: profile, error } = await supabase
+      const { data: profileData, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
@@ -22,7 +25,7 @@ export const useAuthProvider = () => {
         return null;
       }
 
-      return profile;
+      return profileData as UserProfile;
     } catch (err) {
       console.error('Unexpected error in fetchUserProfile:', err);
       return null;
@@ -32,30 +35,38 @@ export const useAuthProvider = () => {
   // Update auth context with the current session/user
   const refreshUser = useCallback(async () => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      setSession(currentSession);
       
-      if (!session) {
+      if (!currentSession) {
         setUser(null);
+        setProfile(null);
         return;
       }
       
-      const profile = await fetchUserProfile(session.user.id);
-      const userRole = profile?.role as UserRole || 'customer';
+      const profileData = await fetchUserProfile(currentSession.user.id);
       
-      setUser({
-        id: session.user.id,
-        email: session.user.email!,
-        fullName: profile?.full_name || '',
-        phone: profile?.phone || '',
-        role: userRole,
-      });
+      if (profileData) {
+        setProfile(profileData);
+        
+        setUser({
+          id: currentSession.user.id,
+          email: currentSession.user.email!,
+          fullName: profileData.full_name || '',
+          phone: profileData.phone || '',
+          role: profileData.role,
+        });
+      } else {
+        setUser(null);
+        setProfile(null);
+      }
     } catch (err) {
       console.error('Error refreshing user:', err);
       setError('Failed to refresh user session');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   }, [fetchUserProfile]);
 
@@ -73,7 +84,7 @@ export const useAuthProvider = () => {
 
   // Login function
   const login = useCallback(async (email: string, password: string) => {
-    setLoading(true);
+    setIsLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -91,13 +102,13 @@ export const useAuthProvider = () => {
       setError(err.message || 'An error occurred during login');
       return { success: false, error: err.message || 'Unknown error' };
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   }, [refreshUser]);
 
   // Register function
-  const register = useCallback(async (email: string, password: string, fullName: string, phone: string) => {
-    setLoading(true);
+  const register = useCallback(async (email: string, password: string, fullName: string, phone: string = '') => {
+    setIsLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -122,13 +133,13 @@ export const useAuthProvider = () => {
       setError(err.message || 'An error occurred during registration');
       return { success: false, error: err.message || 'Unknown error' };
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   }, []);
 
   // Logout function
   const logout = useCallback(async () => {
-    setLoading(true);
+    setIsLoading(true);
     try {
       const { error } = await supabase.auth.signOut();
       
@@ -138,23 +149,35 @@ export const useAuthProvider = () => {
       }
       
       setUser(null);
+      setSession(null);
+      setProfile(null);
     } catch (err: any) {
       setError(err.message || 'An error occurred during logout');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   }, []);
+
+  // Computed properties
+  const isAuthenticated = !!user;
+  const isAdmin = user?.role === 'admin';
+  const isStaff = user?.role === 'staff' || user?.role === 'admin';
 
   // Create an object with all the authentication context values
   const authContextValue = useMemo(() => ({
     user,
-    loading,
+    session,
+    profile,
+    isAdmin,
+    isStaff,
+    isAuthenticated,
+    isLoading,
     error,
     login,
     register,
     logout,
     refreshUser,
-  }), [user, loading, error, login, register, logout, refreshUser]);
+  }), [user, session, profile, isAdmin, isStaff, isAuthenticated, isLoading, error, login, register, logout, refreshUser]);
 
   return authContextValue;
 };
