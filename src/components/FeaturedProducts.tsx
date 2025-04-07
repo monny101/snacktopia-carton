@@ -26,6 +26,8 @@ const FeaturedProducts: React.FC = () => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
+        console.log("Fetching featured products");
+        
         const { data, error } = await supabase
           .from('products')
           .select('*')
@@ -34,12 +36,16 @@ const FeaturedProducts: React.FC = () => {
           .limit(8);
 
         if (error) {
-          console.error('Error fetching products:', error);
+          console.error('Error fetching featured products:', error);
           return;
         }
 
+        console.log("Featured products fetched:", data?.length || 0, "products");
+        
         // If no featured products, get the latest ones
         if (!data || data.length === 0) {
+          console.log("No featured products found, fetching latest products");
+          
           const { data: latestProducts, error: latestError } = await supabase
             .from('products')
             .select('*')
@@ -51,6 +57,7 @@ const FeaturedProducts: React.FC = () => {
             return;
           }
           
+          console.log("Latest products fetched:", latestProducts?.length || 0, "products");
           setProducts(latestProducts || []);
         } else {
           setProducts(data);

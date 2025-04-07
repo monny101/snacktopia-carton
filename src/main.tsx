@@ -6,7 +6,9 @@ import './index.css';
 import { initStorage } from './utils/setupStorage';
 
 // Initialize storage as the app starts
-initStorage().catch(console.error);
+initStorage().catch(error => {
+  console.error("Error initializing storage:", error);
+});
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

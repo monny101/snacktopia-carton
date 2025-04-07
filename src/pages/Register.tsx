@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from '@/hooks/use-toast';
 
 const Register: React.FC = () => {
-  const { signup, isAuthenticated, isLoading } = useAuth();
+  const { register, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const [fullName, setFullName] = useState('');
@@ -49,7 +50,7 @@ const Register: React.FC = () => {
     
     try {
       setLoading(true);
-      const { error: signupError } = await signup(email, password, fullName, phone);
+      const { error: signupError } = await register(email, password, fullName, phone);
       
       if (signupError) {
         console.error("Registration error:", signupError);

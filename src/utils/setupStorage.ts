@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 // This function creates a storage bucket for product images if it doesn't exist
 export const setupProductStorage = async () => {
   try {
+    console.log("Setting up product storage bucket");
+    
     // Check if bucket exists
     const { data: buckets, error: bucketsError } = await supabase
       .storage
@@ -17,7 +19,9 @@ export const setupProductStorage = async () => {
     const productsBucketExists = buckets?.some(bucket => bucket.name === 'products');
     
     if (!productsBucketExists) {
-      // Create the products bucket
+      console.log("Products bucket doesn't exist, creating it now");
+      
+      // Create the products bucket with less restrictive policies
       const { data, error } = await supabase
         .storage
         .createBucket('products', {
@@ -30,7 +34,29 @@ export const setupProductStorage = async () => {
         console.error('Error creating products bucket:', error);
       } else {
         console.log('Products bucket created successfully');
+        
+        // Create a public policy for the bucket
+        try {
+          // This needs to be run by an admin, may fail for regular users
+          const { error: policyError } = await supabase.rpc(
+            'create_storage_policy',
+            { 
+              bucket_name: 'products',
+              is_public: true 
+            }
+          );
+          
+          if (policyError) {
+            console.error('Error setting bucket policy:', policyError);
+          } else {
+            console.log('Bucket policy set to public successfully');
+          }
+        } catch (policyErr) {
+          console.error('Error handling bucket policy:', policyErr);
+        }
       }
+    } else {
+      console.log("Products bucket already exists");
     }
   } catch (error) {
     console.error('Unexpected error in setupProductStorage:', error);
@@ -39,5 +65,6 @@ export const setupProductStorage = async () => {
 
 // Function to call when the application initializes
 export const initStorage = async () => {
+  console.log("Initializing storage");
   await setupProductStorage();
 };
