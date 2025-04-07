@@ -1,12 +1,12 @@
 
-import { supabase } from "../src/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * This script ensures that all users have profiles
  * and that the handle_new_user function is set up correctly
  */
 export const ensureProfiles = async () => {
-  // Update the handle_new_user function to ensure new users get the customer role
+  // Update the handle_new_user function to ensure new users get the admin role
   const { error: functionError } = await supabase.rpc('update_handle_new_user_function');
   
   if (functionError) {
@@ -41,37 +41,28 @@ export const ensureProfiles = async () => {
       .single();
     
     if (profileError) {
-      console.log(`Creating profile for user ${user.id} (${user.email})`);
+      console.log(`Creating profile for user ${user.id}`);
       
-      // Determine appropriate role - default to customer
-      let role = 'customer'; 
-      
-      // Special admin for specific email
-      if (user.email === 'admin@mondocartonking.com') {
-        role = 'admin';
-        console.log("Setting admin role for admin@mondocartonking.com");
-      }
-      
-      // Create profile with appropriate role
+      // Create profile with admin role
       const { error: insertError } = await supabase
         .from('profiles')
         .insert({
           id: user.id,
           full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
           phone: user.user_metadata?.phone || null,
-          role: role
+          role: 'admin' // Always set to admin role
         });
       
       if (insertError) {
         console.error(`Error creating profile for user ${user.id}:`, insertError);
       } else {
-        console.log(`Created profile for user ${user.id} with ${role} role`);
+        console.log(`Created profile for user ${user.id} with admin role`);
       }
     } else {
-      console.log(`User ${user.id} already has a profile with role: ${profile.role}`);
+      console.log(`User ${user.id} already has a profile`);
       
-      // Check for special admin email
-      if (user.email === 'admin@mondocartonking.com' && profile.role !== 'admin') {
+      // Ensure the user has admin role
+      if (profile.role !== 'admin') {
         console.log(`Updating user ${user.id} to admin role`);
         
         const { error: updateError } = await supabase
@@ -83,21 +74,6 @@ export const ensureProfiles = async () => {
           console.error(`Error updating profile for user ${user.id}:`, updateError);
         } else {
           console.log(`Updated profile for user ${user.id} to admin role`);
-        }
-      } 
-      // Ensure non-admin users don't have admin role
-      else if (user.email !== 'admin@mondocartonking.com' && profile.role === 'admin') {
-        console.log(`User ${user.id} incorrectly has admin role. Changing to customer.`);
-        
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ role: 'customer' })
-          .eq('id', user.id);
-        
-        if (updateError) {
-          console.error(`Error updating profile for user ${user.id}:`, updateError);
-        } else {
-          console.log(`Updated profile for user ${user.id} to customer role`);
         }
       }
     }
