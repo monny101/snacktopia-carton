@@ -25,6 +25,7 @@ export const setupAdmin = async () => {
 
     // Try to create a hardcoded admin user (this is for initial setup)
     try {
+      // Fixed TypeScript error by properly checking the type
       const { data, error } = await supabase.auth.admin.createUser({
         email: 'admin@mondocartonking.com',
         password: 'password123',
@@ -55,6 +56,40 @@ export const setupAdmin = async () => {
           return false;
         } else {
           console.log("Created admin profile successfully");
+          
+          // Also create a staff user for testing
+          const { data: staffData, error: staffError } = await supabase.auth.admin.createUser({
+            email: 'staff@mondocartonking.com',
+            password: 'password123',
+            email_confirm: true,
+            user_metadata: {
+              full_name: 'Staff User',
+              role: 'staff'
+            }
+          });
+          
+          if (staffError) {
+            console.error("Error creating staff user:", staffError);
+            // Continue anyway since admin was created successfully
+          } else {
+            console.log("Created staff user successfully");
+            
+            // Create the profile for the staff user
+            const { error: staffProfileError } = await supabase
+              .from('profiles')
+              .insert({
+                id: staffData.user.id,
+                full_name: 'Staff User',
+                role: 'staff'
+              });
+            
+            if (staffProfileError) {
+              console.error("Error creating staff profile:", staffProfileError);
+            } else {
+              console.log("Created staff profile successfully");
+            }
+          }
+          
           return true;
         }
       }

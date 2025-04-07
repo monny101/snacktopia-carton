@@ -12,7 +12,7 @@ const runSetup = async () => {
   console.log("Ensuring all users have profiles...");
   await ensureProfiles();
   
-  console.log("Updating all users to admin role...");
+  console.log("Updating admin roles...");
   await updateAdminRoles();
   
   console.log("Setup complete!");

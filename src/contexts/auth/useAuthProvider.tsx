@@ -31,12 +31,12 @@ export const useAuthProvider = () => {
         // Create a profile for this user if it doesn't exist yet
         console.log("Creating missing profile for user:", userId);
         
-        // Set default role to admin for all new users
+        // Set default role to customer for new users
         const defaultProfile: UserProfile = {
           id: userId,
           full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || null,
           phone: null,
-          role: 'admin'  // Set default role to admin
+          role: 'customer'  // Set default role to customer
         };
         
         // Try to create profile
@@ -132,7 +132,7 @@ export const useAuthProvider = () => {
     try {
       console.log("Attempting to sign up user:", email);
       
-      // Set default role to admin for new signups
+      // Set default role to customer for new signups
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -140,7 +140,7 @@ export const useAuthProvider = () => {
           data: {
             full_name: fullName,
             phone: phone || null,
-            role: 'admin'  // Set role to admin for new users
+            role: 'customer'  // Set role to customer for new users
           },
         }
       });
@@ -161,13 +161,13 @@ export const useAuthProvider = () => {
             id: data.user.id,
             full_name: fullName,
             phone: phone || null,
-            role: 'admin'  // Set role to admin for new users
+            role: 'customer'  // Set role to customer for new users
           });
           
         if (profileError) {
           console.error("Error creating profile during signup:", profileError);
         } else {
-          console.log("Profile created successfully during signup with admin role");
+          console.log("Profile created successfully during signup with customer role");
         }
         
         // Fetch the user's profile after signup
@@ -176,7 +176,7 @@ export const useAuthProvider = () => {
       
       toast({
         title: "Account created successfully",
-        description: "You are now logged in as admin",
+        description: "You are now logged in",
         duration: 2000,
       });
       

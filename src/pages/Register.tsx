@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -50,7 +49,6 @@ const Register: React.FC = () => {
     
     try {
       setLoading(true);
-      // Updated to use the correct number of arguments
       const { error: signupError } = await signup(email, password, fullName, phone);
       
       if (signupError) {
@@ -69,10 +67,10 @@ const Register: React.FC = () => {
       console.log("Registration successful, redirecting...");
       toast({
         title: "Registration successful",
-        description: "Your account has been created with admin privileges",
+        description: "Your account has been created",
         duration: 3000,
       });
-      navigate('/admin');
+      navigate('/');
     } catch (err: any) {
       console.error("Unexpected registration error:", err);
       setError(err.message || 'An error occurred during registration');

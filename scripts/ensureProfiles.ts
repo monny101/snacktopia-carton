@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
  * and that the handle_new_user function is set up correctly
  */
 export const ensureProfiles = async () => {
-  // Update the handle_new_user function to ensure new users get the admin role
+  // Update the handle_new_user function to ensure new users get the correct role
   const { error: functionError } = await supabase.rpc('update_handle_new_user_function');
   
   if (functionError) {
@@ -41,41 +41,28 @@ export const ensureProfiles = async () => {
       .single();
     
     if (profileError) {
-      console.log(`Creating profile for user ${user.id}`);
+      console.log(`Creating profile for user ${user.email || user.id}`);
       
-      // Create profile with admin role
+      // Get role from user metadata or default to customer
+      const role = user.user_metadata?.role || 'customer';
+      
+      // Create profile with role
       const { error: insertError } = await supabase
         .from('profiles')
         .insert({
           id: user.id,
           full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
           phone: user.user_metadata?.phone || null,
-          role: 'admin' // Always set to admin role
+          role: role
         });
       
       if (insertError) {
-        console.error(`Error creating profile for user ${user.id}:`, insertError);
+        console.error(`Error creating profile for user ${user.email || user.id}:`, insertError);
       } else {
-        console.log(`Created profile for user ${user.id} with admin role`);
+        console.log(`Created profile for user ${user.email || user.id} with role: ${role}`);
       }
     } else {
-      console.log(`User ${user.id} already has a profile`);
-      
-      // Ensure the user has admin role
-      if (profile.role !== 'admin') {
-        console.log(`Updating user ${user.id} to admin role`);
-        
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ role: 'admin' })
-          .eq('id', user.id);
-        
-        if (updateError) {
-          console.error(`Error updating profile for user ${user.id}:`, updateError);
-        } else {
-          console.log(`Updated profile for user ${user.id} to admin role`);
-        }
-      }
+      console.log(`User ${user.email || user.id} already has a profile with role: ${profile.role}`);
     }
   }
   
