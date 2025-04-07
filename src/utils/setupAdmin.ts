@@ -6,7 +6,8 @@ export const setupAdmin = async () => {
     console.log("Setting up admin roles and functions...");
 
     // Create or replace the handle_new_user function
-    const { error: functionError } = await supabase.rpc('create_handle_new_user_function', {});
+    // Fix: Use any as type to bypass TypeScript error with function names
+    const { error: functionError } = await supabase.rpc('create_handle_new_user_function' as any, {});
     
     if (functionError) {
       console.error("Error creating handle_new_user function:", functionError);
@@ -15,7 +16,7 @@ export const setupAdmin = async () => {
     }
 
     // Create SQL functions to update and create the handle_new_user function
-    const { error: createFunctionsError } = await supabase.rpc('create_admin_functions', {});
+    const { error: createFunctionsError } = await supabase.rpc('create_admin_functions' as any, {});
     
     if (createFunctionsError) {
       console.error("Error creating admin functions:", createFunctionsError);
@@ -45,7 +46,7 @@ export const setupAdmin = async () => {
         // Create the profile for the admin user
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert({
+          .upsert({
             id: data.user.id,
             full_name: 'Admin User',
             role: 'admin'
@@ -77,7 +78,7 @@ export const setupAdmin = async () => {
             // Create the profile for the staff user
             const { error: staffProfileError } = await supabase
               .from('profiles')
-              .insert({
+              .upsert({
                 id: staffData.user.id,
                 full_name: 'Staff User',
                 role: 'staff'

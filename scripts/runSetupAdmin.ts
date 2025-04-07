@@ -16,6 +16,12 @@ const runSetup = async () => {
   await updateAdminRoles();
   
   console.log("Setup complete!");
+  
+  console.log("\nIMPORTANT: You can now log in with these test accounts:");
+  console.log("Admin: admin@mondocartonking.com / password123");
+  console.log("Staff: staff@mondocartonking.com / password123");
+  console.log("Test Admin: test@mondocartonking.com / password123");
+  console.log("\nMake sure to disable email confirmation in Supabase for testing.");
 };
 
 runSetup().catch(console.error);
