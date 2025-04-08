@@ -6,7 +6,7 @@ interface CartItem {
   name: string;
   price: number;
   image: string;
-  quantity?: number;
+  quantity: number;
 }
 
 interface CartContextType {
@@ -14,9 +14,11 @@ interface CartContextType {
   addItem: (item: CartItem) => void;
   removeItem: (itemId: string) => void;
   updateItemQuantity: (itemId: string, quantity: number) => void;
+  updateQuantity: (itemId: string, quantity: number) => void; // Added for Cart.tsx
   clearCart: () => void;
   totalItems: number;
   totalAmount: number;
+  subtotal: number; // Added for Cart.tsx and Checkout.tsx
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -44,6 +46,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const [totalItems, setTotalItems] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
+  const [subtotal, setSubtotal] = useState(0);
 
   // Update localStorage when cart changes
   useEffect(() => {
@@ -51,8 +54,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
       localStorage.setItem('cart', JSON.stringify(items));
       
       // Calculate totals
-      setTotalItems(items.reduce((acc, item) => acc + (item.quantity || 1), 0));
-      setTotalAmount(items.reduce((acc, item) => acc + ((item.quantity || 1) * item.price), 0));
+      const itemCount = items.reduce((acc, item) => acc + (item.quantity || 1), 0);
+      const amount = items.reduce((acc, item) => acc + ((item.quantity || 1) * item.price), 0);
+      
+      setTotalItems(itemCount);
+      setTotalAmount(amount);
+      setSubtotal(amount);
     } catch (error) {
       console.error('Error saving cart to localStorage', error);
     }
@@ -95,6 +102,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
     );
   };
 
+  // Alias for updateItemQuantity to maintain compatibility with Cart.tsx
+  const updateQuantity = updateItemQuantity;
+
   const clearCart = () => {
     setItems([]);
   };
@@ -104,9 +114,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
     addItem,
     removeItem,
     updateItemQuantity,
+    updateQuantity, // Added for Cart.tsx
     clearCart,
     totalItems,
-    totalAmount
+    totalAmount,
+    subtotal // Added for Cart.tsx and Checkout.tsx
   };
 
   return (
