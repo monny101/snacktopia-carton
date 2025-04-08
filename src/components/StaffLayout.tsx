@@ -20,25 +20,58 @@ import { Loader2, ShoppingCart, MessageSquare, LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const StaffLayout: React.FC = () => {
-  const { isStaff, isAuthenticated, isLoading, logout, profile } = useAuth();
+  const { isStaff, isAdmin, isAuthenticated, isLoading, logout, profile, user, profileFetchAttempted } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Check staff permission directly from the database if needed
+  const verifyStaffStatus = async () => {
+    if (!user) return false;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+        
+      if (error) {
+        console.error("Error verifying staff status:", error);
+        return false;
+      }
+      
+      const role = data?.role;
+      return role === 'staff' || role === 'admin';
+    } catch (error) {
+      console.error("Exception verifying staff status:", error);
+      return false;
+    }
+  };
+
   useEffect(() => {
-    // Show toast notification if a user tries to access staff but isn't a staff
-    if (!isLoading && isAuthenticated && !isStaff) {
-      toast({
-        title: "Access Denied",
-        description: "You don't have staff permission to access this area.",
-        variant: "destructive",
-        duration: 3000,
+    // Only check access if we've finished initial loading and profile fetch
+    if (!isLoading && profileFetchAttempted && isAuthenticated && !isStaff && !isAdmin) {
+      console.log("Access denied to staff area. Current role:", profile?.role);
+      
+      // Double check with database in case of sync issues
+      verifyStaffStatus().then(hasAccess => {
+        if (!hasAccess) {
+          toast({
+            title: "Access Denied",
+            description: "You don't have staff permission to access this area.",
+            variant: "destructive",
+            duration: 3000,
+          });
+          navigate('/');
+        }
       });
     }
-  }, [isLoading, isAuthenticated, isStaff]);
+  }, [isLoading, isAuthenticated, isStaff, isAdmin, profile, profileFetchAttempted, navigate, user]);
 
-  if (isLoading) {
+  if (isLoading || !profileFetchAttempted) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
@@ -47,12 +80,13 @@ const StaffLayout: React.FC = () => {
     );
   }
 
-  // Redirect if not authenticated or not staff
+  // Redirect if not authenticated
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ redirectTo: location.pathname }} />;
   }
 
-  if (!isStaff) {
+  // Redirect if not staff or admin (with extra checks done in useEffect)
+  if (!isStaff && !isAdmin) {
     return <Navigate to="/" />;
   }
 
@@ -78,6 +112,9 @@ const StaffLayout: React.FC = () => {
                   Logged in as: {profile.full_name}
                 </p>
               )}
+              <p className="text-xs text-blue-700 font-medium">
+                Role: {profile?.role || 'Unknown'}
+              </p>
             </div>
           </SidebarHeader>
           <SidebarContent>

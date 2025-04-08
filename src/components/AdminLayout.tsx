@@ -16,29 +16,71 @@ import {
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const AdminLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAdmin, isLoading, profile } = useAuth();
+  const { isAdmin, isLoading, profile, user, profileFetchAttempted } = useAuth();
   
   const isActive = (path: string): boolean => {
     return location.pathname === path;
   };
 
-  useEffect(() => {
-    if (!isLoading && !isAdmin) {
-      toast({
-        title: "Access Denied",
-        description: `You need admin privileges to access this area. Current role: ${profile?.role || 'unknown'}`,
-        variant: "destructive",
-      });
-      navigate('/login');
+  // Function to verify admin status directly with Supabase if needed
+  const verifyAdminStatus = async () => {
+    if (!user) return false;
+    
+    try {
+      // Check if the user has admin role in the database
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+        
+      if (error) {
+        console.error("Error verifying admin status:", error);
+        return false;
+      }
+      
+      return data?.role === 'admin';
+    } catch (error) {
+      console.error("Exception verifying admin status:", error);
+      return false;
     }
-  }, [isAdmin, isLoading, navigate, profile]);
+  };
+
+  useEffect(() => {
+    // Only redirect if we've attempted to fetch the profile and user isn't admin
+    if (!isLoading && profileFetchAttempted && !isAdmin) {
+      console.log("Access denied to admin area. Current role:", profile?.role);
+      
+      // If user is logged in but not admin, double-check directly with database
+      if (user) {
+        verifyAdminStatus().then(isReallyAdmin => {
+          if (!isReallyAdmin) {
+            toast({
+              title: "Access Denied",
+              description: `You need admin privileges to access this area. Current role: ${profile?.role || 'unknown'}`,
+              variant: "destructive",
+            });
+            navigate('/');
+          }
+        });
+      } else {
+        toast({
+          title: "Access Denied",
+          description: `You need admin privileges to access this area.`,
+          variant: "destructive",
+        });
+        navigate('/login', { state: { redirectTo: location.pathname } });
+      }
+    }
+  }, [isAdmin, isLoading, navigate, profile, profileFetchAttempted, user]);
 
   // Show loading state while checking permissions
-  if (isLoading) {
+  if (isLoading || !profileFetchAttempted) {
     return (
       <div className="p-8 text-center">
         <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>

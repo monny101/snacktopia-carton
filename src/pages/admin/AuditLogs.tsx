@@ -133,10 +133,6 @@ const AuditLogs: React.FC = () => {
     return searchableValues.includes(searchTerm.toLowerCase());
   });
   
-  // Extract unique action types and table names for filters
-  const actionTypes = [...new Set(logs.map(log => log.action_type))];
-  const tableNames = [...new Set(logs.map(log => log.table_name))];
-  
   const renderValueChanges = (oldValues: any, newValues: any) => {
     if (!oldValues && !newValues) return 'No changes';
     

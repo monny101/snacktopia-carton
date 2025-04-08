@@ -10,15 +10,18 @@ export const useAuthProvider = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [profileFetchAttempted, setProfileFetchAttempted] = useState(false);
 
   const isAuthenticated = !!user;
   const isAdmin = profile?.role === 'admin';
   const isStaff = profile?.role === 'staff';
 
-  // Fetch user profile
+  // Fetch user profile with improved error handling
   const fetchUserProfile = async (userId: string) => {
     try {
       console.log("Fetching profile for user ID:", userId);
+      setProfileFetchAttempted(true);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -28,38 +31,52 @@ export const useAuthProvider = () => {
       if (error) {
         console.error('Error fetching user profile:', error);
         
-        // Create a profile for this user if it doesn't exist yet
-        console.log("Creating missing profile for user:", userId);
-        
-        // Set default role to customer for new users
-        const defaultProfile: UserProfile = {
-          id: userId,
-          full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || null,
-          phone: null,
-          role: 'customer'  // Default role is customer
-        };
-        
-        // Try to create profile
-        try {
-          const { error: insertError } = await supabase
-            .from('profiles')
-            .insert({
-              id: userId,
-              full_name: defaultProfile.full_name,
-              phone: defaultProfile.phone,
-              role: defaultProfile.role
-            });
-            
-          if (insertError) {
-            console.error("Error creating profile:", insertError);
-          } else {
-            console.log("Profile created successfully with role:", defaultProfile.role);
+        // Check if user exists in auth but profile doesn't exist yet
+        if (error.code === 'PGRST116') { // Single result expected but not found
+          console.log("Profile not found, creating new profile for user:", userId);
+          
+          // Create default profile with role from user metadata if available
+          const defaultRole = user?.user_metadata?.role || 'customer';
+          console.log("Using role from metadata:", defaultRole);
+          
+          const defaultProfile: UserProfile = {
+            id: userId,
+            full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || null,
+            phone: user?.user_metadata?.phone || null,
+            role: defaultRole
+          };
+          
+          try {
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert({
+                id: userId,
+                full_name: defaultProfile.full_name,
+                phone: defaultProfile.phone,
+                role: defaultProfile.role
+              });
+              
+            if (insertError) {
+              console.error("Error creating profile:", insertError);
+              toast({
+                title: "Error",
+                description: "Failed to create user profile. Please try again.",
+                variant: "destructive",
+              });
+            } else {
+              console.log("Profile created successfully with role:", defaultProfile.role);
+              setProfile(defaultProfile);
+            }
+          } catch (insertErr) {
+            console.error("Exception creating profile:", insertErr);
           }
-        } catch (insertErr) {
-          console.error("Exception creating profile:", insertErr);
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to load user profile. Please try refreshing.",
+            variant: "destructive",
+          });
         }
-        
-        setProfile(defaultProfile);
         return;
       }
 
@@ -67,46 +84,78 @@ export const useAuthProvider = () => {
       setProfile(data as UserProfile);
     } catch (err) {
       console.error('Unexpected error fetching profile:', err);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log("Auth state changed:", event, session?.user?.id);
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Defer loading profile with setTimeout if user exists
-        if (session?.user) {
-          setTimeout(() => {
-            fetchUserProfile(session.user.id);
-          }, 0);
-        } else {
-          setProfile(null);
-        }
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("Initial session check:", session?.user?.id);
-      setSession(session);
-      setUser(session?.user ?? null);
+    let authSubscription: { unsubscribe: () => void } | null = null;
+    
+    // Initialize auth state
+    const initAuth = async () => {
+      setIsLoading(true);
       
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
-      }
-      setIsLoading(false);
-    });
+      try {
+        // Set up auth state listener FIRST
+        authSubscription = supabase.auth.onAuthStateChange((event, session) => {
+          console.log("Auth state changed:", event, session?.user?.id);
+          
+          // Update auth state synchronously
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          // Defer profile fetching with setTimeout to avoid recursive auth checks
+          if (session?.user) {
+            setTimeout(() => {
+              fetchUserProfile(session.user.id);
+            }, 0);
+          } else {
+            setProfile(null);
+            setProfileFetchAttempted(false);
+          }
+        }).data.subscription;
 
-    return () => subscription.unsubscribe();
+        // THEN check for existing session
+        const { data } = await supabase.auth.getSession();
+        console.log("Initial session check:", data.session?.user?.id);
+        
+        setSession(data.session);
+        setUser(data.session?.user ?? null);
+        
+        if (data.session?.user) {
+          await fetchUserProfile(data.session.user.id);
+        }
+      } catch (error) {
+        console.error("Auth initialization error:", error);
+        toast({
+          title: "Authentication Error",
+          description: "Failed to initialize authentication. Please refresh.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initAuth();
+
+    // Clean up subscription when component unmounts
+    return () => {
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
       console.log("Attempting login with:", email);
+      setIsLoading(true);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -125,12 +174,15 @@ export const useAuthProvider = () => {
     } catch (error: any) {
       console.error('Login error:', error);
       return { error };
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const signup = async (email: string, password: string, fullName: string, phone?: string) => {
     try {
       console.log("Attempting to sign up user:", email);
+      setIsLoading(true);
       
       // Set default role to customer for new signups
       const { data, error } = await supabase.auth.signUp({
@@ -170,8 +222,13 @@ export const useAuthProvider = () => {
           console.log("Profile created successfully during signup with customer role");
         }
         
-        // Fetch the user's profile after signup
-        fetchUserProfile(data.user.id);
+        // Update local profile state
+        setProfile({
+          id: data.user.id,
+          full_name: fullName,
+          phone: phone || null,
+          role: 'customer'
+        });
       }
       
       toast({
@@ -184,25 +241,43 @@ export const useAuthProvider = () => {
     } catch (error: any) {
       console.error('Signup error:', error);
       return { error };
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
-    setProfile(null);
-    toast({
-      title: "Logged out",
-      description: "You have been logged out successfully",
-      duration: 2000,
-    });
+    try {
+      setIsLoading(true);
+      await supabase.auth.signOut();
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      setProfileFetchAttempted(false);
+      
+      toast({
+        title: "Logged out",
+        description: "You have been logged out successfully",
+        duration: 2000,
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const updateProfile = async (data: Partial<UserProfile>) => {
     if (!user) return { error: new Error("User not authenticated") };
 
     try {
+      setIsLoading(true);
+      
       const { error } = await supabase
         .from('profiles')
         .update(data as any)
@@ -223,6 +298,8 @@ export const useAuthProvider = () => {
     } catch (error: any) {
       console.error('Update profile error:', error);
       return { error };
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -234,6 +311,7 @@ export const useAuthProvider = () => {
     isStaff,
     isAuthenticated,
     isLoading,
+    profileFetchAttempted,
     login,
     signup,
     logout,

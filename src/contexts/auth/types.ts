@@ -16,6 +16,7 @@ export interface AuthContextType {
   isStaff: boolean;
   isAuthenticated: boolean;
   isLoading: boolean;
+  profileFetchAttempted: boolean;
   login: (email: string, password: string) => Promise<{ error: any | null }>;
   signup: (email: string, password: string, fullName: string, phone?: string) => Promise<{ error: any | null }>;
   logout: () => Promise<void>;

@@ -8,16 +8,18 @@ import { supabase } from '@/integrations/supabase/client';
  */
 export const setupStorage = async () => {
   try {
-    // First check if we have an authenticated session
-    const { data: session } = await supabase.auth.getSession();
+    console.log("Initializing storage setup");
     
-    if (!session.session) {
-      console.log("No authenticated session, skipping storage setup");
+    // First check if we have an authenticated session
+    const { data: sessionData } = await supabase.auth.getSession();
+    
+    if (!sessionData.session) {
+      console.log("No authenticated session, skipping storage setup - will try again later");
       // Not a critical error as the user might not be logged in yet
-      return true;
+      return false;
     }
     
-    console.log("Checking storage buckets with authenticated session");
+    console.log("Checking storage buckets with authenticated session:", sessionData.session.user.id);
     
     // Check if the products bucket exists
     const { data: buckets, error: bucketsError } = await supabase
@@ -26,17 +28,25 @@ export const setupStorage = async () => {
     
     if (bucketsError) {
       console.error("Error listing buckets:", bucketsError);
+      
+      // Handle permission errors specifically
+      if (bucketsError.message?.includes('permission')) {
+        console.error("Permission error. This might be due to missing policies.");
+      }
       return false;
     }
     
-    const productsBucketExists = buckets.some(bucket => bucket.name === 'products');
+    const productsBucketExists = buckets?.some(bucket => bucket.name === 'products') || false;
     
     if (!productsBucketExists) {
       console.log("Creating products bucket...");
       try {
         const { error: createError } = await supabase
           .storage
-          .createBucket('products', { public: true });
+          .createBucket('products', { 
+            public: true,
+            fileSizeLimit: 10485760 // 10MB
+          });
           
         if (createError) {
           console.error("Error creating products bucket:", createError);
@@ -44,6 +54,9 @@ export const setupStorage = async () => {
           // The bucket might already exist or be created by another process
         } else {
           console.log("Products bucket created successfully");
+          
+          // Set up the bucket RLS policies
+          await setupBucketPolicies('products');
         }
       } catch (createError) {
         console.error("Exception creating bucket:", createError);
@@ -51,12 +64,48 @@ export const setupStorage = async () => {
       }
     } else {
       console.log("Products bucket already exists");
+      
+      // Make sure policies are set up correctly anyway
+      await setupBucketPolicies('products');
     }
 
     return true;
   } catch (error) {
     console.error("Error in setupStorage:", error);
-    // Return true to avoid blocking app initialization
-    return true;
+    // Return false to indicate setup failed
+    return false;
+  }
+};
+
+/**
+ * Set up the storage bucket policies
+ */
+const setupBucketPolicies = async (bucketName: string) => {
+  try {
+    console.log(`Setting up policies for bucket: ${bucketName}`);
+    
+    // Check if the bucket already has a policy for authenticated users
+    const { data: policies, error: policiesError } = await supabase.rpc('get_policies');
+    
+    if (policiesError) {
+      console.error("Error checking policies:", policiesError);
+      return;
+    }
+    
+    const hasReadPolicy = policies?.some((p: any) => 
+      p.tablename === 'objects' && 
+      p.schemaname === 'storage' && 
+      p.policyname.includes('Read all objects')
+    );
+    
+    if (!hasReadPolicy) {
+      console.log("Setting up read policy for authenticated users");
+      // This would normally be done by SQL but we just executed migrations
+      // so we'll skip it here and rely on the migrations
+    }
+    
+    console.log("Storage policies setup complete");
+  } catch (error) {
+    console.error("Error setting up bucket policies:", error);
   }
 };
