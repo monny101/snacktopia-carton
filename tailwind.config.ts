@@ -55,6 +55,16 @@ export default {
 				},
 				mondoBlue: '#1E40AF',
 				mondoYellow: '#FBBF24',
+				sidebar: {
+					background: "#0055b7",
+					foreground: "#ffffff",
+					border: "rgb(30, 58, 138)",
+					accent: {
+						DEFAULT: "#ffd700",
+						foreground: "#0055b7"
+					},
+					ring: "rgb(30, 58, 138)"
+				}
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
