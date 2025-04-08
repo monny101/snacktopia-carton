@@ -1,11 +1,11 @@
-
-import { supabase } from '../src/integrations/supabase/client';
-
 /**
- * This script updates all existing users to have admin role
- * Run with: ts-node scripts/updateAdminRoles.ts
+ * @typedef {import('@supabase/supabase-js').User} User
+ * @typedef {import('../src/integrations/supabase/types').UserProfile} UserProfile
  */
-const updateAdminRoles = async () => {
+
+const { supabase } = require('../dist-scripts/src/integrations/supabase/client.js');
+
+async function updateAdminRoles() {
   try {
     console.log("Fetching all users...");
     const { data: users, error: usersError } = await supabase.auth.admin.listUsers();
@@ -49,7 +49,7 @@ const updateAdminRoles = async () => {
             id: user.id,
             full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
             phone: user.user_metadata?.phone || null,
-            role: 'admin' // Set to admin role
+            role: 'admin'
           });
         
         if (insertError) {
@@ -77,14 +77,7 @@ const updateAdminRoles = async () => {
     console.log("Finished updating all users to admin role");
   } catch (err) {
     console.error("Error in updateAdminRoles:", err);
-  } finally {
-    process.exit(0);
   }
-};
-
-// Run the script if this file is executed directly
-if (require.main === module) {
-  updateAdminRoles().catch(console.error);
 }
 
-export { updateAdminRoles };
+updateAdminRoles().catch(console.error);
