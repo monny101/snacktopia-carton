@@ -142,7 +142,8 @@ const ProductDetails: React.FC = () => {
         id: product.id,
         name: product.name,
         price: product.price,
-        image: product.image_url || ''
+        image: product.image_url || '',
+        quantity: quantity // Use the quantity state value for the added item
       });
       
       toast({
