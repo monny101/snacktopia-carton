@@ -35,7 +35,7 @@ const AuditLogs: React.FC = () => {
       setLoading(true);
       
       let query = supabase
-        .from('audit_logs' as any)
+        .from('audit_logs')
         .select('*')
         .order(sortField, { ascending: sortDirection === 'asc' });
       
@@ -54,10 +54,28 @@ const AuditLogs: React.FC = () => {
       }
       
       // Fetch user emails for all user IDs in the logs
-      const userIds = [...new Set((data || []).map((log: any) => log.user_id))];
-      await fetchUserEmails(userIds);
-      
-      setLogs(data as AuditLog[] || []);
+      if (data && data.length > 0) {
+        const userIds = [...new Set(data.map(log => log.user_id))];
+        await fetchUserEmails(userIds);
+        
+        // Properly type the data to match our AuditLog interface
+        const typedData: AuditLog[] = data.map(log => ({
+          id: log.id,
+          action_type: log.action_type,
+          table_name: log.table_name,
+          record_id: log.record_id,
+          old_values: log.old_values,
+          new_values: log.new_values,
+          user_id: log.user_id,
+          created_at: log.created_at,
+          ip_address: log.ip_address,
+          user_email: userEmails[log.user_id] || undefined
+        }));
+        
+        setLogs(typedData);
+      } else {
+        setLogs([]);
+      }
     } catch (error) {
       console.error('Error fetching audit logs:', error);
     } finally {
@@ -196,7 +214,7 @@ const AuditLogs: React.FC = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">All actions</SelectItem>
-              {actionTypes.map(action => (
+              {[...new Set(logs.map(log => log.action_type))].map(action => (
                 <SelectItem key={action} value={action}>
                   {action}
                 </SelectItem>
@@ -212,7 +230,7 @@ const AuditLogs: React.FC = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">All tables</SelectItem>
-              {tableNames.map(table => (
+              {[...new Set(logs.map(log => log.table_name))].map(table => (
                 <SelectItem key={table} value={table}>
                   {table}
                 </SelectItem>
@@ -222,7 +240,7 @@ const AuditLogs: React.FC = () => {
         </div>
       </div>
       
-      {filteredLogs.length === 0 ? (
+      {logs.length === 0 ? (
         <div className="text-center py-10 bg-gray-50 rounded-md">
           <p className="text-gray-500">No audit logs found</p>
         </div>
@@ -278,7 +296,19 @@ const AuditLogs: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredLogs.map((log) => (
+                {logs.filter(log => {
+                  const searchableValues = [
+                    log.action_type,
+                    log.table_name,
+                    log.record_id,
+                    JSON.stringify(log.old_values),
+                    JSON.stringify(log.new_values),
+                    log.user_id,
+                    userEmails[log.user_id] || '',
+                  ].join(' ').toLowerCase();
+                  
+                  return searchableValues.includes(searchTerm.toLowerCase());
+                }).map((log) => (
                   <TableRow key={log.id}>
                     <TableCell className="font-mono text-xs">
                       {formatDate(log.created_at)}
