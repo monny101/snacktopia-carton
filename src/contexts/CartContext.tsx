@@ -1,128 +1,111 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { CartItem, CartContextType } from '@/types/cart';
 
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-  quantity: number;
-}
-
-interface CartContextType {
-  items: CartItem[];
-  addItem: (item: CartItem) => void;
-  removeItem: (itemId: string) => void;
-  updateItemQuantity: (itemId: string, quantity: number) => void;
-  updateQuantity: (itemId: string, quantity: number) => void; // Added for Cart.tsx
-  clearCart: () => void;
-  totalItems: number;
-  totalAmount: number;
-  subtotal: number; // Added for Cart.tsx and Checkout.tsx
-}
-
-const CartContext = createContext<CartContextType | undefined>(undefined);
-
-export const useCart = (): CartContextType => {
-  const context = useContext(CartContext);
-  if (context === undefined) {
-    throw new Error('useCart must be used within a CartProvider');
-  }
-  return context;
+// Default context value
+const defaultContext: CartContextType = {
+  items: [],
+  addItem: () => {},
+  removeItem: () => {},
+  clearCart: () => {},
+  updateQuantity: () => {},
+  getItemCount: () => 0,
+  subtotal: 0
 };
 
-export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ 
-  children 
-}) => {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    try {
-      const savedCart = localStorage.getItem('cart');
-      return savedCart ? JSON.parse(savedCart) : [];
-    } catch (error) {
-      console.error('Error loading cart from localStorage', error);
-      return [];
-    }
-  });
+// Create context
+const CartContext = createContext<CartContextType>(defaultContext);
 
-  const [totalItems, setTotalItems] = useState(0);
-  const [totalAmount, setTotalAmount] = useState(0);
-  const [subtotal, setSubtotal] = useState(0);
+// Custom hook to use cart context
+export const useCart = () => useContext(CartContext);
 
-  // Update localStorage when cart changes
+// Cart provider component
+export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [subtotal, setSubtotal] = useState<number>(0);
+
+  // Load cart from localStorage on initial load
   useEffect(() => {
-    try {
-      localStorage.setItem('cart', JSON.stringify(items));
-      
-      // Calculate totals
-      const itemCount = items.reduce((acc, item) => acc + (item.quantity || 1), 0);
-      const amount = items.reduce((acc, item) => acc + ((item.quantity || 1) * item.price), 0);
-      
-      setTotalItems(itemCount);
-      setTotalAmount(amount);
-      setSubtotal(amount);
-    } catch (error) {
-      console.error('Error saving cart to localStorage', error);
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      try {
+        const parsedCart = JSON.parse(savedCart);
+        setItems(parsedCart);
+      } catch (e) {
+        console.error('Error parsing cart from localStorage', e);
+        // If there's an error parsing, reset the cart
+        localStorage.removeItem('cart');
+      }
     }
+  }, []);
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    // Calculate subtotal when items change
+    const newSubtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    setSubtotal(newSubtotal);
+    
+    // Save to localStorage
+    localStorage.setItem('cart', JSON.stringify(items));
   }, [items]);
 
+  // Add item to cart
   const addItem = (item: CartItem) => {
-    setItems(prevItems => {
-      const existingItemIndex = prevItems.findIndex(i => i.id === item.id);
+    setItems(currentItems => {
+      const existingItemIndex = currentItems.findIndex(i => i.id === item.id);
       
-      if (existingItemIndex >= 0) {
+      if (existingItemIndex > -1) {
         // Item exists, update quantity
-        const updatedItems = [...prevItems];
-        const existingItem = updatedItems[existingItemIndex];
+        const updatedItems = [...currentItems];
         updatedItems[existingItemIndex] = {
-          ...existingItem,
-          quantity: (existingItem.quantity || 1) + 1
+          ...updatedItems[existingItemIndex],
+          quantity: updatedItems[existingItemIndex].quantity + item.quantity
         };
         return updatedItems;
       } else {
-        // Item doesn't exist, add it with quantity 1
-        return [...prevItems, { ...item, quantity: 1 }];
+        // Item doesn't exist, add it
+        return [...currentItems, item];
       }
     });
   };
 
-  const removeItem = (itemId: string) => {
-    setItems(prevItems => prevItems.filter(item => item.id !== itemId));
+  // Remove item from cart
+  const removeItem = (id: string) => {
+    setItems(currentItems => currentItems.filter(item => item.id !== id));
   };
 
-  const updateItemQuantity = (itemId: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeItem(itemId);
-      return;
-    }
+  // Clear cart
+  const clearCart = () => {
+    setItems([]);
+    localStorage.removeItem('cart');
+  };
 
-    setItems(prevItems => 
-      prevItems.map(item => 
-        item.id === itemId ? { ...item, quantity } : item
+  // Update item quantity
+  const updateQuantity = (id: string, quantity: number) => {
+    if (quantity < 1) return; // Don't allow quantities less than 1
+    
+    setItems(currentItems => 
+      currentItems.map(item => 
+        item.id === id ? { ...item, quantity } : item
       )
     );
   };
 
-  // Alias for updateItemQuantity to maintain compatibility with Cart.tsx
-  const updateQuantity = updateItemQuantity;
-
-  const clearCart = () => {
-    setItems([]);
-  };
-
-  const contextValue: CartContextType = {
-    items,
-    addItem,
-    removeItem,
-    updateItemQuantity,
-    updateQuantity, // Added for Cart.tsx
-    clearCart,
-    totalItems,
-    totalAmount,
-    subtotal // Added for Cart.tsx and Checkout.tsx
+  // Get total number of items in cart
+  const getItemCount = () => {
+    return items.reduce((count, item) => count + item.quantity, 0);
   };
 
   return (
-    <CartContext.Provider value={contextValue}>
+    <CartContext.Provider value={{ 
+      items, 
+      addItem, 
+      removeItem, 
+      clearCart, 
+      updateQuantity, 
+      getItemCount,
+      subtotal
+    }}>
       {children}
     </CartContext.Provider>
   );
