@@ -14,19 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ArrowUp, ArrowDown, Search, Calendar, Loader2 } from 'lucide-react';
-
-interface AuditLog {
-  id: string;
-  action_type: string;
-  table_name: string;
-  record_id: string;
-  old_values: any;
-  new_values: any;
-  user_id: string;
-  created_at: string;
-  ip_address?: string;
-  user_email?: string;
-}
+import { AuditLog } from '@/integrations/supabase/custom-types';
 
 const AuditLogs: React.FC = () => {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -47,7 +35,7 @@ const AuditLogs: React.FC = () => {
       setLoading(true);
       
       let query = supabase
-        .from('audit_logs')
+        .from('audit_logs' as any)
         .select('*')
         .order(sortField, { ascending: sortDirection === 'asc' });
       
@@ -66,10 +54,10 @@ const AuditLogs: React.FC = () => {
       }
       
       // Fetch user emails for all user IDs in the logs
-      const userIds = [...new Set(data?.map(log => log.user_id))];
+      const userIds = [...new Set((data || []).map((log: any) => log.user_id))];
       await fetchUserEmails(userIds);
       
-      setLogs(data || []);
+      setLogs(data as AuditLog[] || []);
     } catch (error) {
       console.error('Error fetching audit logs:', error);
     } finally {
@@ -79,9 +67,10 @@ const AuditLogs: React.FC = () => {
   
   const fetchUserEmails = async (userIds: string[]) => {
     try {
+      // Since profiles doesn't have email field directly, we'll use full_name for now
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, email');
+        .select('id, full_name');
       
       if (error) {
         throw error;
@@ -89,7 +78,8 @@ const AuditLogs: React.FC = () => {
       
       const emailMap: Record<string, string> = {};
       data?.forEach(user => {
-        emailMap[user.id] = user.email || 'Unknown';
+        // Use full_name as a stand-in for email
+        emailMap[user.id] = user.full_name || 'Unknown';
       });
       
       setUserEmails(emailMap);
@@ -158,8 +148,8 @@ const AuditLogs: React.FC = () => {
         {changes.length === 0 ? (
           <span>No changes detected</span>
         ) : (
-          changes.map(change => (
-            <div key={change.key} className="mb-1">
+          changes.map((change, index) => (
+            <div key={index} className="mb-1">
               <strong>{change.key}:</strong>{' '}
               <span className="text-red-500">{JSON.stringify(change.old)}</span>{' '}
               → {' '}

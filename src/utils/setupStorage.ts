@@ -8,6 +8,17 @@ import { supabase } from '@/integrations/supabase/client';
  */
 export const setupStorage = async () => {
   try {
+    // First check if we have an authenticated session
+    const { data: session } = await supabase.auth.getSession();
+    
+    if (!session.session) {
+      console.log("No authenticated session, skipping storage setup");
+      // Not a critical error as the user might not be logged in yet
+      return true;
+    }
+    
+    console.log("Checking storage buckets with authenticated session");
+    
     // Check if the products bucket exists
     const { data: buckets, error: bucketsError } = await supabase
       .storage
@@ -22,16 +33,22 @@ export const setupStorage = async () => {
     
     if (!productsBucketExists) {
       console.log("Creating products bucket...");
-      const { error: createError } = await supabase
-        .storage
-        .createBucket('products', { public: true });
-        
-      if (createError) {
-        console.error("Error creating products bucket:", createError);
-        return false;
+      try {
+        const { error: createError } = await supabase
+          .storage
+          .createBucket('products', { public: true });
+          
+        if (createError) {
+          console.error("Error creating products bucket:", createError);
+          // Continue execution even if bucket creation fails
+          // The bucket might already exist or be created by another process
+        } else {
+          console.log("Products bucket created successfully");
+        }
+      } catch (createError) {
+        console.error("Exception creating bucket:", createError);
+        // Continue execution even if there's an error
       }
-      
-      console.log("Products bucket created successfully");
     } else {
       console.log("Products bucket already exists");
     }
@@ -39,6 +56,7 @@ export const setupStorage = async () => {
     return true;
   } catch (error) {
     console.error("Error in setupStorage:", error);
-    return false;
+    // Return true to avoid blocking app initialization
+    return true;
   }
 };

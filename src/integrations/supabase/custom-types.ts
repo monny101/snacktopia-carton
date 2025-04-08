@@ -1,20 +1,28 @@
 
-import type { Database as GeneratedDatabase } from './types';
+// Add custom type definitions for tables not yet in the generated types
+// This file complements the auto-generated types.ts file
 
-// Define additional type checking for our components
-export type Tables<T extends keyof GeneratedDatabase['public']['Tables']> = 
-  GeneratedDatabase['public']['Tables'][T]['Row'];
+export interface AuditLog {
+  id: string;
+  action_type: string;
+  table_name: string;
+  record_id: string;
+  old_values: any;
+  new_values: any;
+  user_id: string;
+  created_at: string;
+  ip_address?: string;
+  user_email?: string;
+}
 
-export type ChatMessage = Tables<'chat_messages'> & {
-  profiles?: {
-    full_name: string;
-  };
-};
-
-export type Profile = Tables<'profiles'>;
-export type Product = Tables<'products'>;
-export type Category = Tables<'categories'>;
-export type Subcategory = Tables<'subcategories'>;
-export type Order = Tables<'orders'>;
-export type OrderItem = Tables<'order_items'>;
-export type Address = Tables<'addresses'>;
+export interface InventoryAlert {
+  id: string;
+  product_id: string;
+  threshold: number;
+  alert_message: string | null;
+  is_active: boolean | null;
+  created_at: string | null;
+  created_by: string | null;
+  product_name?: string;
+  current_quantity?: number;
+}

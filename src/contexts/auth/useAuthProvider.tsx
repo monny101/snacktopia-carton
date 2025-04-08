@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
@@ -11,7 +12,7 @@ export const useAuthProvider = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const isAuthenticated = !!user;
-  const isAdmin = profile?.role === 'admin'; // Fixed: Changed from 'customer' to 'admin'
+  const isAdmin = profile?.role === 'admin';
   const isStaff = profile?.role === 'staff';
 
   // Fetch user profile

@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { Button } from '@/components/ui/button';
 import { 
@@ -15,15 +15,39 @@ import {
   History
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { toast } from '@/hooks/use-toast';
 
 const AdminLayout: React.FC = () => {
   const location = useLocation();
-  const { isAdmin } = useAuth();
+  const navigate = useNavigate();
+  const { isAdmin, isLoading, profile } = useAuth();
   
   const isActive = (path: string): boolean => {
     return location.pathname === path;
   };
 
+  useEffect(() => {
+    if (!isLoading && !isAdmin) {
+      toast({
+        title: "Access Denied",
+        description: `You need admin privileges to access this area. Current role: ${profile?.role || 'unknown'}`,
+        variant: "destructive",
+      });
+      navigate('/login');
+    }
+  }, [isAdmin, isLoading, navigate, profile]);
+
+  // Show loading state while checking permissions
+  if (isLoading) {
+    return (
+      <div className="p-8 text-center">
+        <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p>Checking admin credentials...</p>
+      </div>
+    );
+  }
+
+  // This will be caught by the useEffect, but we add an extra check for safety
   if (!isAdmin) {
     return (
       <div className="p-8 text-center">

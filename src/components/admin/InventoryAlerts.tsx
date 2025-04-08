@@ -22,18 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-
-interface InventoryAlert {
-  id: string;
-  product_id: string;
-  threshold: number;
-  alert_message: string | null;
-  is_active: boolean;
-  created_at: string;
-  created_by: string | null;
-  product_name?: string;
-  current_quantity?: number;
-}
+import { InventoryAlert } from '@/integrations/supabase/custom-types';
 
 interface InventoryAlertsProps {
   onlyShowActive?: boolean;
@@ -57,8 +46,9 @@ const InventoryAlerts: React.FC<InventoryAlertsProps> = ({ onlyShowActive = fals
     try {
       setLoading(true);
       
+      // Use any type temporarily to work around type issues
       const { data, error } = await supabase
-        .from('inventory_alerts')
+        .from('inventory_alerts' as any)
         .select(`
           id,
           product_id,
@@ -68,8 +58,7 @@ const InventoryAlerts: React.FC<InventoryAlertsProps> = ({ onlyShowActive = fals
           created_at,
           created_by
         `)
-        .eq(onlyShowActive ? 'is_active' : 'id', onlyShowActive ? true : 'id')
-        .order('created_at', { ascending: false });
+        .eq(onlyShowActive ? 'is_active' : 'id', onlyShowActive ? true : 'id');
       
       if (error) {
         throw error;
@@ -77,7 +66,7 @@ const InventoryAlerts: React.FC<InventoryAlertsProps> = ({ onlyShowActive = fals
       
       // Fetch product details for each alert
       const alertsWithProducts = await Promise.all(
-        (data || []).map(async (alert) => {
+        (data || []).map(async (alert: any) => {
           const { data: productData, error: productError } = await supabase
             .from('products')
             .select('name, quantity')
@@ -89,14 +78,14 @@ const InventoryAlerts: React.FC<InventoryAlertsProps> = ({ onlyShowActive = fals
               ...alert,
               product_name: 'Unknown Product',
               current_quantity: 0,
-            };
+            } as InventoryAlert;
           }
           
           return {
             ...alert,
             product_name: productData.name,
             current_quantity: productData.quantity,
-          };
+          } as InventoryAlert;
         })
       );
       
@@ -141,14 +130,12 @@ const InventoryAlerts: React.FC<InventoryAlertsProps> = ({ onlyShowActive = fals
     }
     
     try {
-      const { data, error } = await supabase.rpc(
-        'create_inventory_alert',
-        {
-          product_id: selectedProductId,
-          threshold,
-          alert_message: alertMessage || null,
-        }
-      );
+      // Call the RPC function directly
+      const { data, error } = await supabase.rpc('create_inventory_alert', {
+        product_id: selectedProductId,
+        threshold: threshold,
+        alert_message: alertMessage || null,
+      });
       
       if (error) {
         throw error;
@@ -179,7 +166,7 @@ const InventoryAlerts: React.FC<InventoryAlertsProps> = ({ onlyShowActive = fals
   const toggleAlertStatus = async (alertId: string, currentStatus: boolean) => {
     try {
       const { error } = await supabase
-        .from('inventory_alerts')
+        .from('inventory_alerts' as any)
         .update({ is_active: !currentStatus })
         .eq('id', alertId);
       
@@ -296,7 +283,7 @@ const InventoryAlerts: React.FC<InventoryAlertsProps> = ({ onlyShowActive = fals
                     <Button
                       variant={alert.is_active ? 'outline' : 'secondary'}
                       size="sm"
-                      onClick={() => toggleAlertStatus(alert.id, alert.is_active)}
+                      onClick={() => toggleAlertStatus(alert.id, alert.is_active as boolean)}
                     >
                       {alert.is_active ? 'Deactivate' : 'Activate'}
                     </Button>
