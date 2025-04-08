@@ -53,7 +53,7 @@ export const useAuthProvider = () => {
                 id: userId,
                 full_name: defaultProfile.full_name,
                 phone: defaultProfile.phone,
-                role: defaultProfile.role
+                role: 'customer' // Always set to customer first - admins need to be set manually
               });
               
             if (insertError) {
@@ -64,8 +64,12 @@ export const useAuthProvider = () => {
                 variant: "destructive",
               });
             } else {
-              console.log("Profile created successfully with role:", defaultProfile.role);
-              setProfile(defaultProfile);
+              console.log("Profile created successfully with role: customer");
+              // Set profile with customer role initially
+              setProfile({
+                ...defaultProfile,
+                role: 'customer'
+              });
             }
           } catch (insertErr) {
             console.error("Exception creating profile:", insertErr);

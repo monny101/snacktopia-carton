@@ -21,76 +21,54 @@ export const setupStorage = async () => {
     
     console.log("Checking storage buckets with authenticated session:", sessionData.session.user.id);
     
-    // Check if the products bucket exists
-    const { data: buckets, error: bucketsError } = await supabase
-      .storage
-      .listBuckets();
-    
-    if (bucketsError) {
-      console.error("Error listing buckets:", bucketsError);
+    try {
+      // Check if the products bucket exists
+      const { data: buckets, error: bucketsError } = await supabase
+        .storage
+        .listBuckets();
       
-      // Handle permission errors specifically
-      if (bucketsError.message?.includes('permission')) {
-        console.error("Permission error. This might be due to missing policies.");
+      if (bucketsError) {
+        console.error("Error listing buckets:", bucketsError);
+        
+        if (bucketsError.message?.includes('permission')) {
+          console.error("Permission error. This might be due to missing policies. Will try to continue anyway.");
+        }
       }
+      
+      const productsBucketExists = buckets?.some(bucket => bucket.name === 'products') || false;
+      
+      if (!productsBucketExists) {
+        console.log("Creating products bucket...");
+        try {
+          const { error: createError } = await supabase
+            .storage
+            .createBucket('products', { 
+              public: true,
+              fileSizeLimit: 10485760 // 10MB
+            });
+            
+          if (createError) {
+            console.error("Error creating products bucket:", createError);
+            // Continue execution even if bucket creation fails
+          } else {
+            console.log("Products bucket created successfully");
+          }
+        } catch (createError) {
+          console.error("Exception creating bucket:", createError);
+          // Continue execution even if there's an error
+        }
+      } else {
+        console.log("Products bucket already exists");
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Error accessing storage:", error);
       return false;
     }
-    
-    const productsBucketExists = buckets?.some(bucket => bucket.name === 'products') || false;
-    
-    if (!productsBucketExists) {
-      console.log("Creating products bucket...");
-      try {
-        const { error: createError } = await supabase
-          .storage
-          .createBucket('products', { 
-            public: true,
-            fileSizeLimit: 10485760 // 10MB
-          });
-          
-        if (createError) {
-          console.error("Error creating products bucket:", createError);
-          // Continue execution even if bucket creation fails
-          // The bucket might already exist or be created by another process
-        } else {
-          console.log("Products bucket created successfully");
-          
-          // Set up the bucket RLS policies by testing access
-          await setupBucketPolicies('products');
-        }
-      } catch (createError) {
-        console.error("Exception creating bucket:", createError);
-        // Continue execution even if there's an error
-      }
-    } else {
-      console.log("Products bucket already exists");
-      
-      // Make sure policies are set up correctly anyway
-      await setupBucketPolicies('products');
-    }
-
-    return true;
   } catch (error) {
     console.error("Error in setupStorage:", error);
     // Return false to indicate setup failed
     return false;
-  }
-};
-
-/**
- * Set up the storage bucket policies by testing access
- * instead of directly querying policies
- */
-const setupBucketPolicies = async (bucketName: string) => {
-  try {
-    console.log(`Setting up policies for bucket: ${bucketName}`);
-    
-    // Skip the policy checking entirely as it's causing TypeScript errors
-    // The createBucket call above already sets the public to true
-    // which should be sufficient for most use cases
-    
-    console.log("Storage policies setup complete");
-  } catch (error) {
-    console.error("Error setting up bucket policies:", error);
   }
 };
