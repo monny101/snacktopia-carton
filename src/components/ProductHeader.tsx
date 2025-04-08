@@ -1,5 +1,7 @@
 
 import React from 'react';
+import { Badge } from "@/components/ui/badge";
+import { AlertCircle } from 'lucide-react';
 
 interface Category {
   id: string;
@@ -19,6 +21,8 @@ interface ProductHeaderProps {
   selectedSubcategory: string | null;
   getCategoryName: (id: string) => string;
   getSubcategoryName: (id: string) => string;
+  showLowStockWarning?: boolean;
+  lowStockCount?: number;
 }
 
 const ProductHeader: React.FC<ProductHeaderProps> = ({ 
@@ -27,29 +31,40 @@ const ProductHeader: React.FC<ProductHeaderProps> = ({
   selectedCategory,
   selectedSubcategory,
   getCategoryName,
-  getSubcategoryName
+  getSubcategoryName,
+  showLowStockWarning = false,
+  lowStockCount = 0
 }) => {
   return (
     <div className="flex justify-between items-center mb-4">
-      <h2 className="text-xl font-semibold">
-        {loading 
-          ? 'Loading products...' 
-          : filteredProducts.length === 0 
-            ? 'No products found' 
-            : `${filteredProducts.length} products found`}
-      </h2>
+      <div className="flex items-center">
+        <h2 className="text-xl font-semibold mr-4">
+          {loading 
+            ? 'Loading products...' 
+            : filteredProducts.length === 0 
+              ? 'No products found' 
+              : `${filteredProducts.length} products found`}
+        </h2>
+        
+        {showLowStockWarning && lowStockCount > 0 && (
+          <Badge variant="destructive" className="flex items-center gap-1">
+            <AlertCircle size={14} />
+            {lowStockCount} low stock
+          </Badge>
+        )}
+      </div>
       
       {/* Display active filters */}
       <div className="flex items-center gap-2">
         {selectedCategory && (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500 text-white">
+          <Badge className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500 text-white">
             {getCategoryName(selectedCategory)}
-          </span>
+          </Badge>
         )}
         {selectedSubcategory && (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500 text-blue-900">
+          <Badge className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500 text-blue-900">
             {getSubcategoryName(selectedSubcategory)}
-          </span>
+          </Badge>
         )}
       </div>
     </div>

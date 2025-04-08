@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
@@ -12,7 +11,7 @@ export const useAuthProvider = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const isAuthenticated = !!user;
-  const isAdmin = profile?.role === 'customer'; // Changed this to match our available role
+  const isAdmin = profile?.role === 'admin'; // Fixed: Changed from 'customer' to 'admin'
   const isStaff = profile?.role === 'staff';
 
   // Fetch user profile
@@ -36,7 +35,7 @@ export const useAuthProvider = () => {
           id: userId,
           full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || null,
           phone: null,
-          role: 'customer'  // Use customer role
+          role: 'customer'  // Default role is customer
         };
         
         // Try to create profile

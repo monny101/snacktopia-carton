@@ -1,162 +1,133 @@
 
-import React, { useEffect } from 'react';
-import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth/AuthContext';
-import { 
-  SidebarProvider, 
-  Sidebar, 
-  SidebarContent, 
-  SidebarHeader, 
-  SidebarGroup, 
-  SidebarGroupLabel, 
-  SidebarMenu, 
-  SidebarMenuItem, 
-  SidebarMenuButton,
-  SidebarTrigger,
-  SidebarFooter,
-  SidebarInset
-} from '@/components/ui/sidebar';
-import { Loader2, LayoutDashboard, Package, ShoppingCart, MessageSquare, Users, LogOut } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/hooks/use-toast';
+import { 
+  LayoutDashboard, 
+  Package, 
+  Users, 
+  ShoppingCart, 
+  MessageSquare, 
+  ClipboardList, 
+  Settings, 
+  AlertOctagon,
+  History
+} from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const AdminLayout: React.FC = () => {
-  const { isAdmin, isStaff, isAuthenticated, isLoading, logout, profile } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
+  const { isAdmin } = useAuth();
+  
+  const isActive = (path: string): boolean => {
+    return location.pathname === path;
+  };
 
-  useEffect(() => {
-    // Show a toast notification if a user tries to access admin but doesn't have permission
-    if (!isLoading && isAuthenticated && !isAdmin && !isStaff) {
-      toast({
-        title: "Access Denied",
-        description: "You don't have permission to access the admin area.",
-        variant: "destructive",
-        duration: 3000,
-      });
-    }
-  }, [isLoading, isAuthenticated, isAdmin, isStaff]);
-
-  if (isLoading) {
+  if (!isAdmin) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-        <p className="ml-2">Loading...</p>
+      <div className="p-8 text-center">
+        <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
+        <p className="mb-4">You don't have permission to access the admin area.</p>
+        <Link to="/">
+          <Button>Return to Home</Button>
+        </Link>
       </div>
     );
   }
 
-  // Redirect if not authenticated or not an admin/staff
-  if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ redirectTo: location.pathname }} />;
-  }
-
-  if (!isAdmin && !isStaff) {
-    return <Navigate to="/" />;
-  }
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
-
   return (
-    <SidebarProvider>
-      <div className="flex w-full min-h-screen">
-        <Sidebar>
-          <SidebarHeader className="border-b border-blue-100">
-            <div className="p-2">
-              <h2 className="text-xl font-bold text-blue-600">
-                Mondo Admin
-              </h2>
-              <p className="text-xs text-gray-500">
-                {isAdmin ? 'Administrator' : 'Staff'} Panel
-              </p>
-              {profile?.full_name && (
-                <p className="text-xs text-blue-700 font-medium mt-1">
-                  Logged in as: {profile.full_name}
-                </p>
-              )}
-            </div>
-          </SidebarHeader>
-          <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupLabel>Management</SidebarGroupLabel>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Dashboard">
-                    <Link to="/admin">
-                      <LayoutDashboard className="h-4 w-4" />
-                      <span>Dashboard</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Products">
-                    <Link to="/admin/products">
-                      <Package className="h-4 w-4" />
-                      <span>Products</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Orders">
-                    <Link to="/admin/orders">
-                      <ShoppingCart className="h-4 w-4" />
-                      <span>Orders</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Chat">
-                    <Link to="/admin/chat">
-                      <MessageSquare className="h-4 w-4" />
-                      <span>Customer Chat</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                {isAdmin && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild tooltip="Users">
-                      <Link to="/admin/users">
-                        <Users className="h-4 w-4" />
-                        <span>Users</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-              </SidebarMenu>
-            </SidebarGroup>
-          </SidebarContent>
-          <SidebarFooter className="border-t border-blue-100 p-4">
-            <Button 
-              variant="outline" 
-              className="w-full flex items-center justify-center gap-2" 
-              onClick={handleLogout}
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Logout</span>
-            </Button>
-            <div className="text-xs text-center mt-2 text-gray-500">
-              <Link to="/" className="hover:text-blue-600">
-                Return to Store
-              </Link>
-            </div>
-          </SidebarFooter>
-        </Sidebar>
-        <SidebarInset className="bg-gray-50">
-          <div className="p-4 flex">
-            <SidebarTrigger className="mr-2" />
-            <div className="flex-1 ml-2">
-              <div className="bg-white rounded-lg shadow-sm p-4 min-h-[calc(100vh-2rem)]">
-                <Outlet />
-              </div>
-            </div>
-          </div>
-        </SidebarInset>
+    <div className="grid grid-cols-12 min-h-screen">
+      {/* Sidebar */}
+      <div className="col-span-12 md:col-span-2 bg-gray-900 text-white">
+        <div className="p-4 flex flex-col h-full">
+          <h1 className="text-lg font-bold mb-8 border-b border-gray-800 pb-2">Admin Dashboard</h1>
+          <ScrollArea className="flex-1">
+            <nav className="space-y-1">
+              <SidebarLink 
+                to="/admin" 
+                icon={<LayoutDashboard className="mr-2 h-4 w-4" />} 
+                text="Dashboard" 
+                isActive={isActive('/admin')}
+              />
+              <SidebarLink 
+                to="/admin/products" 
+                icon={<Package className="mr-2 h-4 w-4" />} 
+                text="Products" 
+                isActive={isActive('/admin/products')}
+              />
+              <SidebarLink 
+                to="/admin/users" 
+                icon={<Users className="mr-2 h-4 w-4" />} 
+                text="Users" 
+                isActive={isActive('/admin/users')}
+              />
+              <SidebarLink 
+                to="/admin/orders" 
+                icon={<ShoppingCart className="mr-2 h-4 w-4" />} 
+                text="Orders" 
+                isActive={isActive('/admin/orders')}
+              />
+              <SidebarLink 
+                to="/admin/chat" 
+                icon={<MessageSquare className="mr-2 h-4 w-4" />} 
+                text="Customer Chat" 
+                isActive={isActive('/admin/chat')}
+              />
+              <SidebarLink 
+                to="/admin/inventory-alerts" 
+                icon={<AlertOctagon className="mr-2 h-4 w-4" />} 
+                text="Inventory Alerts" 
+                isActive={isActive('/admin/inventory-alerts')}
+              />
+              <SidebarLink 
+                to="/admin/audit-logs" 
+                icon={<History className="mr-2 h-4 w-4" />} 
+                text="Audit Logs" 
+                isActive={isActive('/admin/audit-logs')}
+              />
+              <SidebarLink 
+                to="/admin/settings" 
+                icon={<Settings className="mr-2 h-4 w-4" />} 
+                text="Settings" 
+                isActive={isActive('/admin/settings')}
+              />
+            </nav>
+          </ScrollArea>
+        </div>
       </div>
-    </SidebarProvider>
+      
+      {/* Main Content */}
+      <div className="col-span-12 md:col-span-10 bg-gray-50">
+        <div className="p-6 md:p-8">
+          <Outlet />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface SidebarLinkProps {
+  to: string;
+  icon: React.ReactNode;
+  text: string;
+  isActive: boolean;
+}
+
+const SidebarLink: React.FC<SidebarLinkProps> = ({ to, icon, text, isActive }) => {
+  return (
+    <Link to={to} className="block">
+      <div
+        className={`flex items-center px-3 py-2 rounded-md transition-colors ${
+          isActive 
+            ? 'bg-blue-700 text-white' 
+            : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+        }`}
+      >
+        {icon}
+        <span>{text}</span>
+      </div>
+    </Link>
   );
 };
 
