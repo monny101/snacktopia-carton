@@ -1,8 +1,10 @@
 
 import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
 import App from './App.tsx';
 import './index.css';
 import { setupStorage } from './utils/setupStorage';
+import { CartProvider } from './contexts/CartContext';
 
 // Initialize storage buckets with better error handling
 const initializeApp = async () => {
@@ -17,7 +19,13 @@ const initializeApp = async () => {
   }
   
   // Render the app regardless of storage setup status
-  createRoot(document.getElementById("root")!).render(<App />);
+  createRoot(document.getElementById("root")!).render(
+    <BrowserRouter>
+      <CartProvider>
+        <App />
+      </CartProvider>
+    </BrowserRouter>
+  );
 };
 
 initializeApp();
