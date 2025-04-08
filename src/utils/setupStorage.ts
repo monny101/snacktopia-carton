@@ -85,14 +85,20 @@ const setupBucketPolicies = async (bucketName: string) => {
     console.log(`Setting up policies for bucket: ${bucketName}`);
     
     // Check if the bucket already has a policy for authenticated users
-    const { data: policies, error: policiesError } = await supabase.rpc('get_policies');
+    // Use a direct SQL query instead of the get_policies RPC
+    const { data: policies, error: policiesError } = await supabase
+      .from('pg_policies') // Using the view directly instead of RPC
+      .select('*')
+      .eq('schemaname', 'storage')
+      .eq('tablename', 'objects');
     
     if (policiesError) {
       console.error("Error checking policies:", policiesError);
       return;
     }
     
-    const hasReadPolicy = policies?.some((p: any) => 
+    // Fixed: Check if policies is an array before using some()
+    const hasReadPolicy = Array.isArray(policies) && policies.some((p: any) => 
       p.tablename === 'objects' && 
       p.schemaname === 'storage' && 
       p.policyname.includes('Read all objects')
