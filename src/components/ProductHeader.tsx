@@ -2,21 +2,13 @@
 import React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle } from 'lucide-react';
+import type { Database } from '@/integrations/supabase/types';
 
-interface Category {
-  id: string;
-  name: string;
-}
-
-interface Subcategory {
-  id: string;
-  name: string;
-  category_id: string;
-}
+type Product = Database['public']['Tables']['products']['Row'];
 
 interface ProductHeaderProps {
   loading: boolean;
-  filteredProducts: any[];
+  filteredProducts: Product[];
   selectedCategory: string | null;
   selectedSubcategory: string | null;
   getCategoryName: (id: string) => string;

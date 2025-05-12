@@ -1,20 +1,11 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Filter } from 'lucide-react';
+import { Filter, X } from 'lucide-react';
+import type { Database } from '@/integrations/supabase/types';
 
-interface Category {
-  id: string;
-  name: string;
-  description?: string;
-}
-
-interface Subcategory {
-  id: string;
-  name: string;
-  category_id: string;
-  description?: string;
-}
+type Category = Database['public']['Tables']['categories']['Row'];
+type Subcategory = Database['public']['Tables']['subcategories']['Row'];
 
 interface ProductFilterProps {
   categories: Category[];

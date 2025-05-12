@@ -8,17 +8,13 @@ import ProductHeader from '@/components/ProductHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ErrorCard } from '@/components/ui/error-card';
-import { 
-  supabase, 
-  TablesInsert, 
-  TablesUpdate,
-  Tables 
-} from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 
 // Type definitions
-type Product = Tables<'products'>;
-type Category = Tables<'categories'>;
-type Subcategory = Tables<'subcategories'>;
+type Product = Database['public']['Tables']['products']['Row'];
+type Category = Database['public']['Tables']['categories']['Row'];
+type Subcategory = Database['public']['Tables']['subcategories']['Row'];
 
 const Products: React.FC = () => {
   // URL params
@@ -39,6 +35,7 @@ const Products: React.FC = () => {
   const [topBrands, setTopBrands] = useState<string[]>([
     'Nike', 'Adidas', 'Puma', 'Reebok', 'Under Armour'
   ]);
+  const [sortBy, setSortBy] = useState<'default' | 'priceAsc' | 'priceDesc'>('default');
 
   // Load data from URL params
   useEffect(() => {
@@ -192,6 +189,20 @@ const Products: React.FC = () => {
   // Handle filter toggle
   const toggleFilters = () => {
     setShowFilters(!showFilters);
+  };
+  
+  // Calculate subcategories for the selected category
+  const categorySubcategories = selectedCategory 
+    ? subcategories.filter(sub => sub.category_id === selectedCategory) 
+    : [];
+  
+  // Reset all filters
+  const resetFilters = () => {
+    setSelectedCategory('');
+    setSelectedSubcategory('');
+    setSearchTerm('');
+    setSortBy('default');
+    updateUrlParams('', '', '');
   };
   
   // Filter products for display
@@ -348,8 +359,16 @@ const Products: React.FC = () => {
               subcategories={subcategories}
               selectedCategory={selectedCategory}
               selectedSubcategory={selectedSubcategory}
-              onCategoryChange={handleCategoryChange}
-              onSubcategoryChange={handleSubcategoryChange}
+              searchTerm={searchTerm}
+              sortBy={sortBy}
+              showFilters={showFilters}
+              categorySubcategories={categorySubcategories}
+              setShowFilters={setShowFilters}
+              setSearchTerm={setSearchTerm}
+              setSortBy={setSortBy}
+              setSelectedCategory={setSelectedCategory}
+              setSelectedSubcategory={setSelectedSubcategory}
+              resetFilters={resetFilters}
             />
             
             {/* Price Range Filter */}
@@ -387,12 +406,7 @@ const Products: React.FC = () => {
                   variant="ghost" 
                   size="sm" 
                   className="w-full text-sm text-gray-600"
-                  onClick={() => {
-                    setSelectedCategory('');
-                    setSelectedSubcategory('');
-                    setSearchTerm('');
-                    updateUrlParams('', '', '');
-                  }}
+                  onClick={resetFilters}
                 >
                   <X className="mr-2 h-4 w-4" /> 
                   Clear All Filters
@@ -405,10 +419,12 @@ const Products: React.FC = () => {
         {/* Products */}
         <div>
           <ProductHeader
-            totalProducts={filteredProducts.length}
-            searchTerm={searchTerm}
-            categoryName={selectedCategory ? categories.find(cat => cat.id === selectedCategory)?.name : ''}
-            subcategoryName={selectedSubcategory ? subcategories.find(sub => sub.id === selectedSubcategory)?.name : ''}
+            loading={loading}
+            filteredProducts={filteredProducts}
+            selectedCategory={selectedCategory}
+            selectedSubcategory={selectedSubcategory}
+            getCategoryName={getCategoryName}
+            getSubcategoryName={getSubcategoryName}
           />
           
           <div className="mt-6">
