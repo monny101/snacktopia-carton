@@ -3,11 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth/AuthContext';
-import { Loader2, AlertCircle, User, Mail, Phone, Lock } from 'lucide-react';
+import { Loader2, Mail, Phone, Lock, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ErrorCard } from '@/components/ui/error-card';
 import { toast } from '@/hooks/use-toast';
 
 const Register: React.FC = () => {
@@ -91,11 +91,17 @@ const Register: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-md mx-auto">
-        <Card className="shadow-lg border-blue-100">
+    <div className="container max-w-md mx-auto px-4 py-8">
+      <div className="relative overflow-hidden rounded-lg">
+        {/* Background elements */}
+        <div className="absolute -top-10 -right-10 w-40 h-40 bg-blue-200 rounded-full opacity-20 blur-3xl"></div>
+        <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-yellow-200 rounded-full opacity-20 blur-3xl"></div>
+        
+        <Card className="shadow-lg border-blue-100 bg-white/80 backdrop-blur-sm">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center text-blue-600">Create an Account</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-mondoBlue to-blue-700 bg-clip-text text-transparent">
+              Create an Account
+            </CardTitle>
             <CardDescription className="text-center">
               Join Mondo Carton King today
             </CardDescription>
@@ -103,16 +109,20 @@ const Register: React.FC = () => {
           
           <CardContent className="space-y-4">
             {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+              <ErrorCard
+                title="Registration Error"
+                description={error}
+                onDismiss={() => setError(null)}
+                action={{
+                  label: "Try Again",
+                  onClick: () => setError(null)
+                }}
+              />
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="fullName">
+                <Label htmlFor="fullName" className="text-sm font-medium">
                   Full Name <span className="text-red-500">*</span>
                 </Label>
                 <div className="relative">
@@ -122,7 +132,7 @@ const Register: React.FC = () => {
                     id="fullName"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 bg-white/50 border-gray-200 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                     placeholder="Your full name"
                     required
                   />
@@ -130,7 +140,7 @@ const Register: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">
+                <Label htmlFor="email" className="text-sm font-medium">
                   Email Address <span className="text-red-500">*</span>
                 </Label>
                 <div className="relative">
@@ -140,7 +150,7 @@ const Register: React.FC = () => {
                     id="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 bg-white/50 border-gray-200 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                     placeholder="your@email.com"
                     required
                   />
@@ -148,7 +158,9 @@ const Register: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
+                <Label htmlFor="phone" className="text-sm font-medium">
+                  Phone Number
+                </Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
@@ -156,14 +168,14 @@ const Register: React.FC = () => {
                     id="phone"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 bg-white/50 border-gray-200 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                     placeholder="Your phone number (optional)"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">
+                <Label htmlFor="password" className="text-sm font-medium">
                   Password <span className="text-red-500">*</span>
                 </Label>
                 <div className="relative">
@@ -173,7 +185,7 @@ const Register: React.FC = () => {
                     id="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 bg-white/50 border-gray-200 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                     placeholder="Create a password (min 6 characters)"
                     required
                   />
@@ -181,7 +193,7 @@ const Register: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">
+                <Label htmlFor="confirmPassword" className="text-sm font-medium">
                   Confirm Password <span className="text-red-500">*</span>
                 </Label>
                 <div className="relative">
@@ -191,7 +203,7 @@ const Register: React.FC = () => {
                     id="confirmPassword"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 bg-white/50 border-gray-200 focus:border-blue-400 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                     placeholder="Confirm your password"
                     required
                   />
@@ -200,7 +212,7 @@ const Register: React.FC = () => {
 
               <Button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 h-11 font-medium"
+                className="w-full bg-gradient-to-r from-mondoBlue to-blue-700 hover:from-mondoBlue/90 hover:to-blue-800 h-11 font-medium transition-all shadow hover:shadow-lg"
                 disabled={loading}
               >
                 {loading ? (
@@ -218,7 +230,7 @@ const Register: React.FC = () => {
           <CardFooter className="flex justify-center">
             <p className="text-gray-600">
               Already have an account?{' '}
-              <Link to="/login" className="text-blue-600 hover:underline">
+              <Link to="/login" className="text-blue-600 hover:underline font-medium">
                 Log in
               </Link>
             </p>
