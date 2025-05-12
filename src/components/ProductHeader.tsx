@@ -36,8 +36,8 @@ const ProductHeader: React.FC<ProductHeaderProps> = ({
   subcategoryName
 }) => {
   return (
-    <div className="flex justify-between items-center mb-4">
-      <div className="flex items-center">
+    <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-2">
+      <div className="flex flex-col md:flex-row md:items-center">
         <h2 className="text-xl font-semibold mr-4">
           {loading 
             ? 'Loading products...' 
@@ -56,14 +56,14 @@ const ProductHeader: React.FC<ProductHeaderProps> = ({
         )}
 
         {searchTerm && (
-          <span className="text-sm text-gray-500 ml-2">
+          <span className="text-sm text-gray-500 mt-1 md:mt-0 md:ml-2">
             Search: "{searchTerm}"
           </span>
         )}
       </div>
       
       {/* Display active filters */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {selectedCategory && getCategoryName && (
           <Badge className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500 text-white">
             {getCategoryName(selectedCategory)}

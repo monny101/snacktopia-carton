@@ -405,12 +405,24 @@ export type Database = {
         Args: { product_id: string; threshold: number; alert_message: string }
         Returns: string
       }
+      get_user_role: {
+        Args: { user_id: string }
+        Returns: string
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_admin_user: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
       is_staff_or_admin: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_staff_or_admin_user: {
+        Args: { user_id: string }
         Returns: boolean
       }
       suspend_user: {
