@@ -104,7 +104,7 @@ const Home: React.FC = () => {
               <p className="text-gray-600">Enjoy convenient home delivery or pickup options for your orders.</p>
             </div>
             
-            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 text-center transform transition-transform hover:scale-105 hover:shadow-lg">
+            <div className="bg-white p-6 shadow-md border border-gray-100 text-center transform transition-transform hover:scale-105 hover:shadow-lg px-[24px] my-0 mx-0 rounded-xl">
               <div className="inline-flex items-center justify-center w-16 h-16 mb-6 bg-mondoBlue/10 rounded-full">
                 <ThumbsUp className="w-8 h-8 text-mondoBlue" />
               </div>
