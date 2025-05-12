@@ -11,7 +11,7 @@ const Home: React.FC = () => {
       <PromoMarquee />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-blue-800 via-mondoBlue to-blue-600 py-20 md:py-28">
+      <section className="relative overflow-hidden bg-gradient-to-br from-blue-800 via-mondoBlue to-blue-600 py-20 md:py-[100px]">
         {/* Decorative elements */}
         <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-blue-400/20 blur-3xl" />
         <div className="absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-blue-400/10 blur-3xl" />
