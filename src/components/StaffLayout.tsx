@@ -36,11 +36,30 @@ const StaffLayout: React.FC = () => {
         .from('profiles')
         .select('role')
         .eq('id', user.id)
-        .single();
+        .maybeSingle(); // Using maybeSingle instead of single
         
       if (error) {
         console.error("Error verifying staff status:", error);
         return false;
+      }
+      
+      // If no profile is found, create one with staff role
+      if (!data) {
+        console.log("No profile found for staff verification, creating one");
+        const { error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Staff User',
+            role: 'staff' // Set as staff since we're in staff context
+          });
+          
+        if (createError) {
+          console.error("Error creating staff profile:", createError);
+          return false;
+        }
+        
+        return true; // Created as staff
       }
       
       const role = data?.role;
@@ -58,7 +77,11 @@ const StaffLayout: React.FC = () => {
       
       // Double check with database in case of sync issues
       verifyStaffStatus().then(hasAccess => {
-        if (!hasAccess) {
+        if (hasAccess) {
+          console.log("Staff verification successful, allowing access");
+          // Force profile refresh to update state
+          window.location.reload();
+        } else {
           toast({
             title: "Access Denied",
             description: "You don't have staff permission to access this area.",

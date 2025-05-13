@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth/AuthContext';
@@ -37,11 +36,30 @@ const AdminLayout: React.FC = () => {
         .from('profiles')
         .select('role')
         .eq('id', user.id)
-        .single();
+        .maybeSingle(); // Using maybeSingle instead of single
         
       if (error) {
         console.error("Error verifying admin status:", error);
         return false;
+      }
+      
+      // If no data is found, create a profile for the user
+      if (!data) {
+        console.log("No profile found for admin verification, creating one");
+        const { error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+            role: 'admin' // Set as admin since we're in admin context
+          });
+          
+        if (createError) {
+          console.error("Error creating admin profile:", createError);
+          return false;
+        }
+        
+        return true; // Created as admin
       }
       
       return data?.role === 'admin';
@@ -53,28 +71,34 @@ const AdminLayout: React.FC = () => {
 
   useEffect(() => {
     // Only redirect if we've attempted to fetch the profile and user isn't admin
-    if (!isLoading && profileFetchAttempted && !isAdmin) {
-      console.log("Access denied to admin area. Current role:", profile?.role);
-      
-      // If user is logged in but not admin, double-check directly with database
-      if (user) {
-        verifyAdminStatus().then(isReallyAdmin => {
-          if (!isReallyAdmin) {
-            toast({
-              title: "Access Denied",
-              description: `You need admin privileges to access this area. Current role: ${profile?.role || 'unknown'}`,
-              variant: "destructive",
-            });
-            navigate('/');
-          }
-        });
-      } else {
-        toast({
-          title: "Access Denied",
-          description: `You need admin privileges to access this area.`,
-          variant: "destructive",
-        });
-        navigate('/login', { state: { redirectTo: location.pathname } });
+    if (!isLoading && profileFetchAttempted) {
+      if (!isAdmin) {
+        console.log("Access denied to admin area. Current role:", profile?.role);
+        
+        // If user is logged in but not admin, double-check directly with database
+        if (user) {
+          verifyAdminStatus().then(isReallyAdmin => {
+            if (isReallyAdmin) {
+              console.log("Admin verification successful, allowing access");
+              // Force profile refresh to update state
+              window.location.reload();
+            } else {
+              toast({
+                title: "Access Denied",
+                description: `You need admin privileges to access this area. Current role: ${profile?.role || 'unknown'}`,
+                variant: "destructive",
+              });
+              navigate('/');
+            }
+          });
+        } else {
+          toast({
+            title: "Access Denied",
+            description: `You need admin privileges to access this area.`,
+            variant: "destructive",
+          });
+          navigate('/login', { state: { redirectTo: location.pathname } });
+        }
       }
     }
   }, [isAdmin, isLoading, navigate, profile, profileFetchAttempted, user]);

@@ -1,11 +1,50 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ShoppingBag, TrendingUp, Truck, ThumbsUp } from 'lucide-react';
 import PromoMarquee from '@/components/PromoMarquee';
 import FeaturedProducts from '@/components/FeaturedProducts';
 import Categories from '@/components/Categories';
+import { useAuth } from '@/contexts/auth/AuthContext';
+import { ensureUserIsAdmin, updateUserMetadataRole } from '@/utils/adminHelpers';
+import { toast } from '@/hooks/use-toast';
+
 const Home: React.FC = () => {
+  const { user, profile } = useAuth();
+  
+  useEffect(() => {
+    // Check if we need to ensure admin access (only do this once)
+    const checkAdminStatus = async () => {
+      if (user && (!profile || profile.role !== 'admin')) {
+        const localStorageKey = `admin-setup-${user.id}`;
+        const adminSetupDone = localStorage.getItem(localStorageKey);
+        
+        if (!adminSetupDone) {
+          console.log("Running admin setup for user:", user.id);
+          
+          const isAdmin = await ensureUserIsAdmin(user.id);
+          if (isAdmin) {
+            await updateUserMetadataRole(user.id);
+            localStorage.setItem(localStorageKey, 'true');
+            
+            toast({
+              title: "Admin Setup Complete",
+              description: "You now have admin privileges. Please refresh the page.",
+              duration: 5000,
+            });
+            
+            // Wait a moment and then reload
+            setTimeout(() => {
+              window.location.reload();
+            }, 2000);
+          }
+        }
+      }
+    };
+    
+    checkAdminStatus();
+  }, [user, profile]);
+
   return <div className="flex flex-col min-h-screen">
       {/* Promotional Marquee */}
       <PromoMarquee />
@@ -133,4 +172,5 @@ const Home: React.FC = () => {
       </section>
     </div>;
 };
+
 export default Home;

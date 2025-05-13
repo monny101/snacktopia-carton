@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
@@ -26,60 +25,72 @@ export const useAuthProvider = () => {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle(); // Use maybeSingle instead of single to avoid errors when no profile is found
 
       if (error) {
         console.error('Error fetching user profile:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load user profile. Please try refreshing.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!data) {
+        console.log("Profile not found, creating new profile for user:", userId);
         
-        // Check if user exists in auth but profile doesn't exist yet
-        if (error.code === 'PGRST116') { // Single result expected but not found
-          console.log("Profile not found, creating new profile for user:", userId);
-          
-          // Create default profile with role from user metadata if available
-          const defaultRole = user?.user_metadata?.role || 'customer';
-          console.log("Using role from metadata:", defaultRole);
-          
-          const defaultProfile: UserProfile = {
-            id: userId,
-            full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || null,
-            phone: user?.user_metadata?.phone || null,
-            role: defaultRole
-          };
-          
-          try {
-            const { error: insertError } = await supabase
-              .from('profiles')
-              .insert({
-                id: userId,
-                full_name: defaultProfile.full_name,
-                phone: defaultProfile.phone,
-                role: defaultRole // Use the role from metadata
-              });
-              
-            if (insertError) {
-              console.error("Error creating profile:", insertError);
-              toast({
-                title: "Error",
-                description: "Failed to create user profile. Please try again.",
-                variant: "destructive",
-              });
-            } else {
-              console.log("Profile created successfully with role: customer");
-              // Set profile with role from metadata
-              setProfile({
-                ...defaultProfile,
-                role: defaultRole
-              });
-            }
-          } catch (insertErr) {
-            console.error("Exception creating profile:", insertErr);
+        // Create default profile with role from user metadata if available
+        const defaultRole = user?.user_metadata?.role || 'customer';
+        console.log("Using role from metadata:", defaultRole);
+        
+        const defaultProfile: UserProfile = {
+          id: userId,
+          full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || null,
+          phone: user?.user_metadata?.phone || null,
+          role: defaultRole
+        };
+        
+        try {
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: userId,
+              full_name: defaultProfile.full_name,
+              phone: defaultProfile.phone,
+              role: defaultRole
+            });
+            
+          if (insertError) {
+            console.error("Error creating profile:", insertError);
+            toast({
+              title: "Error",
+              description: "Failed to create user profile. Please try again.",
+              variant: "destructive",
+            });
+          } else {
+            console.log("Profile created successfully with role:", defaultRole);
+            // Set profile with role from metadata
+            setProfile({
+              ...defaultProfile,
+              role: defaultRole
+            });
+            
+            // Re-fetch the profile to make sure we have all fields
+            setTimeout(async () => {
+              const { data: newProfile } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .maybeSingle();
+                
+              if (newProfile) {
+                setProfile(newProfile as UserProfile);
+              }
+            }, 500);
           }
-        } else {
-          toast({
-            title: "Error",
-            description: "Failed to load user profile. Please try refreshing.",
-            variant: "destructive",
-          });
+        } catch (insertErr) {
+          console.error("Exception creating profile:", insertErr);
         }
         return;
       }
