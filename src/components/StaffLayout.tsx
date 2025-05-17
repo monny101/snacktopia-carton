@@ -16,67 +16,25 @@ import {
   SidebarFooter,
   SidebarInset
 } from '@/components/ui/sidebar';
-import { Loader2, ShoppingCart, MessageSquare, LogOut } from 'lucide-react';
+import { Loader2, ShoppingCart, MessageSquare, LogOut, UserCog } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { verifyStaffPrivileges } from '@/utils/adminHelpers';
 
 const StaffLayout: React.FC = () => {
   const { isStaff, isAdmin, isAuthenticated, isLoading, logout, profile, user, profileFetchAttempted } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Check staff permission directly from the database if needed
-  const verifyStaffStatus = async () => {
-    if (!user) return false;
-    
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .maybeSingle(); // Using maybeSingle instead of single
-        
-      if (error) {
-        console.error("Error verifying staff status:", error);
-        return false;
-      }
-      
-      // If no profile is found, create one with staff role
-      if (!data) {
-        console.log("No profile found for staff verification, creating one");
-        const { error: createError } = await supabase
-          .from('profiles')
-          .insert({
-            id: user.id,
-            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Staff User',
-            role: 'staff' // Set as staff since we're in staff context
-          });
-          
-        if (createError) {
-          console.error("Error creating staff profile:", createError);
-          return false;
-        }
-        
-        return true; // Created as staff
-      }
-      
-      const role = data?.role;
-      return role === 'staff' || role === 'admin';
-    } catch (error) {
-      console.error("Exception verifying staff status:", error);
-      return false;
-    }
-  };
-
+  // Verify staff status against database directly
   useEffect(() => {
     // Only check access if we've finished initial loading and profile fetch
-    if (!isLoading && profileFetchAttempted && isAuthenticated && !isStaff && !isAdmin) {
-      console.log("Access denied to staff area. Current role:", profile?.role);
+    if (!isLoading && profileFetchAttempted && isAuthenticated && !isStaff && !isAdmin && user) {
+      console.log("Verifying staff access for user:", user.id);
       
-      // Double check with database in case of sync issues
-      verifyStaffStatus().then(hasAccess => {
+      verifyStaffPrivileges(user.id).then(hasAccess => {
         if (hasAccess) {
           console.log("Staff verification successful, allowing access");
           // Force profile refresh to update state
@@ -98,7 +56,7 @@ const StaffLayout: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-        <p className="ml-2">Loading...</p>
+        <p className="ml-2">Loading staff panel...</p>
       </div>
     );
   }
@@ -108,13 +66,13 @@ const StaffLayout: React.FC = () => {
     return <Navigate to="/login" state={{ redirectTo: location.pathname }} />;
   }
 
-  // Redirect if not staff or admin (with extra checks done in useEffect)
+  // Redirect if not staff or admin
   if (!isStaff && !isAdmin) {
     return <Navigate to="/" />;
   }
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 
@@ -160,6 +118,18 @@ const StaffLayout: React.FC = () => {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                
+                {/* Show user management only for admins */}
+                {isAdmin && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="User Management">
+                      <Link to="/admin/users">
+                        <UserCog className="h-4 w-4" />
+                        <span>User Management</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </SidebarGroup>
           </SidebarContent>
