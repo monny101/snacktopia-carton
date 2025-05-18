@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { CartItem, CartContextType } from '@/types/cart';
 
@@ -96,6 +95,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return items.reduce((count, item) => count + item.quantity, 0);
   };
 
+  // Get total cost (can include delivery, taxes, etc. in future)
+  const getTotalCost = () => {
+    return subtotal;
+  };
+
   return (
     <CartContext.Provider value={{ 
       items, 
@@ -104,7 +108,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clearCart, 
       updateQuantity, 
       getItemCount,
-      subtotal
+      subtotal,
+      getTotalCost // add to context value
     }}>
       {children}
     </CartContext.Provider>

@@ -1,13 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
-import { Search, Filter, X, Check } from 'lucide-react';
+import { Search, Filter, X, Check, ChevronDown } from 'lucide-react';
 import ProductGrid from '@/components/ProductGrid';
 import ProductFilter from '@/components/ProductFilter';
 import ProductHeader from '@/components/ProductHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ErrorCard } from '@/components/ui/error-card';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -32,22 +32,27 @@ const Products: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
-  const [topBrands, setTopBrands] = useState<string[]>([
-    'Nike', 'Adidas', 'Puma', 'Reebok', 'Under Armour'
-  ]);
-  const [sortBy, setSortBy] = useState<'default' | 'priceAsc' | 'priceDesc'>('default');
+  const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 0, max: 0 });
+  const [selectedPriceRange, setSelectedPriceRange] = useState<{ min: number | null; max: number | null }>({ min: null, max: null });
+  const [sortBy, setSortBy] = useState<'default' | 'priceAsc' | 'priceDesc' | 'newest' | 'popular'>('default');
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
 
   // Load data from URL params
   useEffect(() => {
     const category = searchParams.get('category') || '';
     const subcategory = searchParams.get('subcategory') || '';
     const search = searchParams.get('search') || '';
+    const sort = searchParams.get('sort') || 'default';
+    const minPrice = searchParams.get('minPrice');
+    const maxPrice = searchParams.get('maxPrice');
     
     setSelectedCategory(category);
     setSelectedSubcategory(subcategory);
     setSearchTerm(search);
+    setSortBy(sort as typeof sortBy);
+    if (minPrice) setSelectedPriceRange(prev => ({ ...prev, min: Number(minPrice) }));
+    if (maxPrice) setSelectedPriceRange(prev => ({ ...prev, max: Number(maxPrice) }));
     
-    // Focus search input if search is in URL
     if (search) {
       setIsSearchFocused(true);
     }
@@ -73,34 +78,26 @@ const Products: React.FC = () => {
         if (subcategoriesError) throw subcategoriesError;
         setSubcategories(subcategoriesData);
       } catch (error) {
-        console.error('Error fetching categories or subcategories:', error);
-        setError('Failed to load categories. Please refresh the page.');
+        console.error('Error fetching categories:', error);
+        setError('Failed to load categories.');
       }
     };
-
+    
     fetchCategoriesAndSubcategories();
   }, []);
-  
+
   // Fetch products
   useEffect(() => {
     const fetchProducts = async () => {
-      setLoading(true);
-      setError(null);
-      
       try {
+        setLoading(true);
         let query = supabase.from('products').select('*');
         
         if (selectedCategory) {
-          const subcategoriesInCategory = subcategories
-            .filter(sub => {
-              const category = categories.find(cat => cat.id === sub.category_id);
-              return category?.id === selectedCategory;
-            })
+          const categorySubcategories = subcategories
+            .filter(sub => sub.category_id === selectedCategory)
             .map(sub => sub.id);
-            
-          if (subcategoriesInCategory.length > 0) {
-            query = query.in('subcategory_id', subcategoriesInCategory);
-          }
+          query = query.in('subcategory_id', categorySubcategories);
         }
         
         if (selectedSubcategory) {
@@ -110,11 +107,45 @@ const Products: React.FC = () => {
         if (searchTerm) {
           query = query.ilike('name', `%${searchTerm}%`);
         }
+
+        if (selectedPriceRange.min !== null) {
+          query = query.gte('price', selectedPriceRange.min);
+        }
+
+        if (selectedPriceRange.max !== null) {
+          query = query.lte('price', selectedPriceRange.max);
+        }
+
+        switch (sortBy) {
+          case 'priceAsc':
+            query = query.order('price', { ascending: true });
+            break;
+          case 'priceDesc':
+            query = query.order('price', { ascending: false });
+            break;
+          case 'newest':
+            query = query.order('created_at', { ascending: false });
+            break;
+          case 'popular':
+            query = query.order('quantity', { ascending: false });
+            break;
+          default:
+            query = query.order('name');
+        }
         
         const { data, error: productsError } = await query;
         
         if (productsError) throw productsError;
         setProducts(data || []);
+
+        // Calculate price range
+        if (data && data.length > 0) {
+          const prices = data.map(p => p.price);
+          setPriceRange({
+            min: Math.floor(Math.min(...prices)),
+            max: Math.ceil(Math.max(...prices))
+          });
+        }
       } catch (error) {
         console.error('Error fetching products:', error);
         setError('Failed to load products. Please try again.');
@@ -124,34 +155,35 @@ const Products: React.FC = () => {
     };
     
     fetchProducts();
-  }, [selectedCategory, selectedSubcategory, searchTerm, categories, subcategories]);
+  }, [selectedCategory, selectedSubcategory, searchTerm, sortBy, selectedPriceRange, categories, subcategories]);
   
   // Update URL params when filters change
-  const updateUrlParams = (
-    category: string, 
-    subcategory: string, 
-    search: string
-  ) => {
+  const updateUrlParams = () => {
     const params = new URLSearchParams();
     
-    if (category) params.set('category', category);
-    if (subcategory) params.set('subcategory', subcategory);
-    if (search) params.set('search', search);
+    if (selectedCategory) params.set('category', selectedCategory);
+    if (selectedSubcategory) params.set('subcategory', selectedSubcategory);
+    if (searchTerm) params.set('search', searchTerm);
+    if (sortBy !== 'default') params.set('sort', sortBy);
+    if (selectedPriceRange.min !== null) params.set('minPrice', selectedPriceRange.min.toString());
+    if (selectedPriceRange.max !== null) params.set('maxPrice', selectedPriceRange.max.toString());
     
     setSearchParams(params);
   };
   
+  useEffect(() => {
+    updateUrlParams();
+  }, [selectedCategory, selectedSubcategory, searchTerm, sortBy, selectedPriceRange]);
+
   // Handle category change
   const handleCategoryChange = (categoryId: string) => {
     setSelectedCategory(categoryId);
     setSelectedSubcategory('');
-    updateUrlParams(categoryId, '', searchTerm);
   };
   
   // Handle subcategory change
   const handleSubcategoryChange = (subcategoryId: string) => {
     setSelectedSubcategory(subcategoryId);
-    updateUrlParams(selectedCategory, subcategoryId, searchTerm);
   };
   
   // Handle search change
@@ -162,14 +194,17 @@ const Products: React.FC = () => {
   // Handle search submission
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateUrlParams(selectedCategory, selectedSubcategory, searchTerm);
     setIsSearchFocused(false);
   };
   
   // Clear search
   const handleClearSearch = () => {
     setSearchTerm('');
-    updateUrlParams(selectedCategory, selectedSubcategory, '');
+  };
+
+  // Handle price range change
+  const handlePriceRangeChange = (min: number | null, max: number | null) => {
+    setSelectedPriceRange({ min, max });
   };
   
   // Helper functions to get category and subcategory names
@@ -202,11 +237,8 @@ const Products: React.FC = () => {
     setSelectedSubcategory('');
     setSearchTerm('');
     setSortBy('default');
-    updateUrlParams('', '', '');
+    setSelectedPriceRange({ min: null, max: null });
   };
-  
-  // Filter products for display
-  const filteredProducts = products;
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl">
@@ -228,6 +260,7 @@ const Products: React.FC = () => {
       {/* Search and filter bar */}
       <div className="sticky top-16 z-20 -mx-4 px-4 py-3 bg-white/80 backdrop-blur-md border-b border-gray-200">
         <div className="flex items-center gap-3 max-w-3xl mx-auto">
+          {/* Search */}
           <div className="relative flex-1">
             <form onSubmit={handleSearchSubmit}>
               <div className="relative">
@@ -253,39 +286,32 @@ const Products: React.FC = () => {
               </div>
             </form>
 
-            {/* Search suggestions panel */}
+            {/* Search suggestions */}
             {isSearchFocused && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50">
                 <div className="p-2">
                   {searchTerm ? (
                     <>
-                      {/* Search autocomplete suggestions */}
                       <div className="py-2 px-3 hover:bg-gray-50 rounded-md cursor-pointer flex items-center">
                         <Search className="h-4 w-4 text-gray-400 mr-2" />
                         <span>Search for "<strong>{searchTerm}</strong>"</span>
                       </div>
                       
-                      {/* Sample popular searches */}
                       <div className="mt-2 border-t border-gray-100 pt-2">
                         <div className="text-xs text-gray-500 px-3 py-1">Popular Searches</div>
                         <div className="py-2 px-3 hover:bg-gray-50 rounded-md cursor-pointer">
-                          Food items
+                          Groceries
                         </div>
                         <div className="py-2 px-3 hover:bg-gray-50 rounded-md cursor-pointer">
-                          Soap powder
+                          Electronics
                         </div>
                       </div>
                     </>
                   ) : (
                     <>
-                      {/* Recent searches (if no current search term) */}
                       <div className="text-xs text-gray-500 px-3 py-1">Recent Searches</div>
                       <div className="py-2 px-3 hover:bg-gray-50 rounded-md cursor-pointer flex items-center justify-between">
                         <span>Rice</span>
-                        <X className="h-3 w-3 text-gray-400" />
-                      </div>
-                      <div className="py-2 px-3 hover:bg-gray-50 rounded-md cursor-pointer flex items-center justify-between">
-                        <span>Detergent</span>
                         <X className="h-3 w-3 text-gray-400" />
                       </div>
                     </>
@@ -301,7 +327,49 @@ const Products: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Sort Dropdown */}
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+              onClick={() => setShowSortDropdown(!showSortDropdown)}
+            >
+              Sort By
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+            
+            {showSortDropdown && (
+              <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                {[
+                  { value: 'default', label: 'Relevance' },
+                  { value: 'newest', label: 'Newest Arrivals' },
+                  { value: 'priceAsc', label: 'Price: Low to High' },
+                  { value: 'priceDesc', label: 'Price: High to Low' },
+                  { value: 'popular', label: 'Most Popular' }
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    className={`w-full px-4 py-2 text-left text-sm ${
+                      sortBy === option.value ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-50'
+                    }`}
+                    onClick={() => {
+                      setSortBy(option.value as typeof sortBy);
+                      setShowSortDropdown(false);
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      {option.label}
+                      {sortBy === option.value && <Check className="h-4 w-4" />}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           
+          {/* Filter Toggle */}
           <Button
             variant="outline"
             size="icon"
@@ -314,8 +382,9 @@ const Products: React.FC = () => {
         </div>
       </div>
 
+      {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6 mt-6">
-        {/* Filters - hidden on mobile unless expanded */}
+        {/* Filters Sidebar */}
         <div className={`${showFilters ? 'block' : 'hidden lg:block'}`}>
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 lg:sticky lg:top-32">
             <div className="flex items-center justify-between mb-4 lg:hidden">
@@ -330,78 +399,139 @@ const Products: React.FC = () => {
               </Button>
             </div>
             
-            {/* Top Brands Section */}
+            {/* Categories */}
             <div className="mb-6">
-              <h3 className="font-semibold mb-3 text-gray-800">Top Brands</h3>
-              <div className="grid grid-cols-3 gap-2">
-                {topBrands.map(brand => (
-                  <div 
-                    key={brand} 
-                    className="flex flex-col items-center justify-center p-2 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 cursor-pointer transition-colors"
+              <h3 className="font-semibold mb-3 text-gray-800">Categories</h3>
+              <div className="space-y-2">
+                {categories.map(category => (
+                  <button
+                    key={category.id}
+                    onClick={() => handleCategoryChange(category.id)}
+                    className={`w-full text-left px-2 py-1.5 rounded-md text-sm ${
+                      selectedCategory === category.id
+                        ? 'bg-blue-50 text-blue-600 font-medium'
+                        : 'hover:bg-gray-50'
+                    }`}
                   >
-                    <div className="w-8 h-8 rounded-full bg-gray-100 mb-1 flex items-center justify-center text-xs font-medium">
-                      {brand.substring(0, 1)}
-                    </div>
-                    <span className="text-xs text-center">{brand}</span>
-                  </div>
+                    {category.name}
+                  </button>
                 ))}
-                <div className="flex flex-col items-center justify-center p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                  <div className="w-8 h-8 rounded-full bg-gray-100 mb-1 flex items-center justify-center text-xs">
-                    +
-                  </div>
-                  <span className="text-xs">More</span>
-                </div>
               </div>
             </div>
 
-            <ProductFilter
-              categories={categories}
-              subcategories={subcategories}
-              selectedCategory={selectedCategory}
-              selectedSubcategory={selectedSubcategory}
-              searchTerm={searchTerm}
-              sortBy={sortBy}
-              showFilters={showFilters}
-              categorySubcategories={categorySubcategories}
-              setShowFilters={setShowFilters}
-              setSearchTerm={setSearchTerm}
-              setSortBy={setSortBy}
-              setSelectedCategory={setSelectedCategory}
-              setSelectedSubcategory={setSelectedSubcategory}
-              resetFilters={resetFilters}
-            />
-            
-            {/* Price Range Filter */}
-            <div className="mt-6">
+            {/* Subcategories - only show when a category is selected */}
+            {selectedCategory && categorySubcategories.length > 0 && (
+              <div className="mb-6">
+                <h3 className="font-semibold mb-3 text-gray-800">Subcategories</h3>
+                <div className="space-y-2">
+                  {categorySubcategories.map(subcategory => (
+                    <button
+                      key={subcategory.id}
+                      onClick={() => handleSubcategoryChange(subcategory.id)}
+                      className={`w-full text-left px-2 py-1.5 rounded-md text-sm ${
+                        selectedSubcategory === subcategory.id
+                          ? 'bg-blue-50 text-blue-600 font-medium'
+                          : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      {subcategory.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Price Range */}
+            <div className="mb-6">
               <h3 className="font-semibold mb-3 text-gray-800">Price Range</h3>
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div>
                   <Input 
                     type="number" 
-                    placeholder="Min" 
+                    placeholder="₦ Min" 
+                    value={selectedPriceRange.min || ''}
+                    onChange={(e) => handlePriceRangeChange(
+                      e.target.value ? Number(e.target.value) : null,
+                      selectedPriceRange.max
+                    )}
                     className="text-sm h-9"
                   />
                 </div>
                 <div>
                   <Input 
                     type="number" 
-                    placeholder="Max" 
+                    placeholder="₦ Max" 
+                    value={selectedPriceRange.max || ''}
+                    onChange={(e) => handlePriceRangeChange(
+                      selectedPriceRange.min,
+                      e.target.value ? Number(e.target.value) : null
+                    )}
                     className="text-sm h-9"
                   />
                 </div>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full text-sm"
-              >
-                Apply
-              </Button>
+              
+              {/* Price range quick select */}
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: 'Under ₦5K', min: 0, max: 5000 },
+                  { label: '₦5K - ₦10K', min: 5000, max: 10000 },
+                  { label: '₦10K - ₦20K', min: 10000, max: 20000 },
+                  { label: 'Over ₦20K', min: 20000, max: null }
+                ].map((range) => (
+                  <Button
+                    key={range.label}
+                    variant="outline"
+                    size="sm"
+                    className={`text-xs ${
+                      selectedPriceRange.min === range.min && selectedPriceRange.max === range.max
+                        ? 'bg-blue-50 text-blue-600 border-blue-200'
+                        : ''
+                    }`}
+                    onClick={() => handlePriceRangeChange(range.min, range.max)}
+                  >
+                    {range.label}
+                  </Button>
+                ))}
+              </div>
             </div>
-            
-            {/* Clear All Filters */}
-            {(selectedCategory || selectedSubcategory || searchTerm) && (
+
+            {/* Active Filters */}
+            {(selectedCategory || selectedSubcategory || selectedPriceRange.min || selectedPriceRange.max || searchTerm) && (
               <div className="mt-6 pt-4 border-t border-gray-100">
+                <div className="mb-3">
+                  <h3 className="font-semibold text-sm text-gray-800">Active Filters</h3>
+                </div>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {selectedCategory && (
+                    <Badge variant="secondary" className="bg-blue-50 text-blue-600 gap-1">
+                      {categories.find(c => c.id === selectedCategory)?.name}
+                      <button onClick={() => setSelectedCategory('')}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  )}
+                  {selectedSubcategory && (
+                    <Badge variant="secondary" className="bg-blue-50 text-blue-600 gap-1">
+                      {subcategories.find(s => s.id === selectedSubcategory)?.name}
+                      <button onClick={() => setSelectedSubcategory('')}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  )}
+                  {(selectedPriceRange.min !== null || selectedPriceRange.max !== null) && (
+                    <Badge variant="secondary" className="bg-blue-50 text-blue-600 gap-1">
+                      {selectedPriceRange.min !== null && selectedPriceRange.max !== null
+                        ? `₦${selectedPriceRange.min} - ₦${selectedPriceRange.max}`
+                        : selectedPriceRange.min !== null
+                        ? `Min ₦${selectedPriceRange.min}`
+                        : `Max ₦${selectedPriceRange.max}`}
+                      <button onClick={() => setSelectedPriceRange({ min: null, max: null })}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  )}
+                </div>
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -416,21 +546,22 @@ const Products: React.FC = () => {
           </div>
         </div>
 
-        {/* Products */}
+        {/* Products Grid */}
         <div>
           <ProductHeader
             loading={loading}
-            filteredProducts={filteredProducts}
+            filteredProducts={products}
             selectedCategory={selectedCategory}
             selectedSubcategory={selectedSubcategory}
             getCategoryName={getCategoryName}
             getSubcategoryName={getSubcategoryName}
+            searchTerm={searchTerm}
           />
           
           <div className="mt-6">
             <ProductGrid
               loading={loading}
-              filteredProducts={filteredProducts}
+              filteredProducts={products}
               getCategoryName={getCategoryName}
               getSubcategoryName={getSubcategoryName}
             />

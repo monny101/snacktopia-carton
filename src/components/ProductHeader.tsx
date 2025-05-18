@@ -1,14 +1,10 @@
-
 import React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle } from 'lucide-react';
-import type { Database } from '@/integrations/supabase/types';
-
-type Product = Database['public']['Tables']['products']['Row'];
 
 interface ProductHeaderProps {
   loading?: boolean;
-  filteredProducts?: Product[];
+  filteredProducts?: any[];
   selectedCategory?: string | null;
   selectedSubcategory?: string | null;
   getCategoryName?: (id: string) => string;
@@ -36,53 +32,69 @@ const ProductHeader: React.FC<ProductHeaderProps> = ({
   subcategoryName
 }) => {
   return (
-    <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-2">
-      <div className="flex flex-col md:flex-row md:items-center">
-        <h2 className="text-xl font-semibold mr-4">
-          {loading 
-            ? 'Loading products...' 
-            : filteredProducts.length === 0 
-              ? 'No products found' 
-              : totalProducts !== undefined
-                ? `${totalProducts} products found`
-                : `${filteredProducts.length} products found`}
-        </h2>
-        
-        {showLowStockWarning && lowStockCount > 0 && (
-          <Badge variant="destructive" className="flex items-center gap-1">
-            <AlertCircle size={14} />
-            {lowStockCount} low stock
-          </Badge>
-        )}
+    <div className="flex flex-col gap-3">
+      {/* Header Title and Results Count */}
+      <div className="flex flex-col gap-1">
+        <div className="flex items-baseline gap-3">
+          <h1 className="text-lg font-semibold text-gray-900">
+            {selectedCategory && getCategoryName && `${getCategoryName(selectedCategory)} `}
+            {selectedSubcategory && getSubcategoryName && `${getSubcategoryName(selectedSubcategory)} `}
+            {!selectedCategory && !selectedSubcategory && 'All Products'}
+          </h1>
+          <p className="text-sm text-gray-500">
+            {loading 
+              ? 'Loading...' 
+              : filteredProducts.length === 0 
+                ? 'No products found' 
+                : totalProducts !== undefined
+                  ? `${totalProducts.toLocaleString()} products`
+                  : `${filteredProducts.length.toLocaleString()} products`}
+          </p>
+        </div>
 
+        {/* Search Results */}
         {searchTerm && (
-          <span className="text-sm text-gray-500 mt-1 md:mt-0 md:ml-2">
-            Search: "{searchTerm}"
-          </span>
+          <p className="text-sm text-gray-600">
+            Search results for "<span className="font-medium">{searchTerm}</span>"
+          </p>
         )}
       </div>
-      
-      {/* Display active filters */}
-      <div className="flex flex-wrap items-center gap-2">
-        {selectedCategory && getCategoryName && (
-          <Badge className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500 text-white">
-            {getCategoryName(selectedCategory)}
+
+      {/* Status Warnings */}
+      {showLowStockWarning && lowStockCount > 0 && (
+        <div className="flex items-center gap-2">
+          <Badge variant="destructive" className="flex items-center gap-1">
+            <AlertCircle size={14} />
+            {lowStockCount} products low in stock
           </Badge>
+        </div>
+      )}
+
+      {/* Category Breadcrumbs */}
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        {selectedCategory && getCategoryName && (
+          <>
+            <Badge variant="secondary" className="bg-blue-50 text-blue-600">
+              {getCategoryName(selectedCategory)}
+            </Badge>
+            {selectedSubcategory && (
+              <Badge variant="secondary" className="bg-blue-50 text-blue-600">
+                {getSubcategoryName(selectedSubcategory)}
+              </Badge>
+            )}
+          </>
         )}
         {categoryName && (
-          <Badge className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500 text-white">
-            {categoryName}
-          </Badge>
-        )}
-        {selectedSubcategory && getSubcategoryName && (
-          <Badge className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500 text-blue-900">
-            {getSubcategoryName(selectedSubcategory)}
-          </Badge>
-        )}
-        {subcategoryName && (
-          <Badge className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500 text-blue-900">
-            {subcategoryName}
-          </Badge>
+          <>
+            <Badge variant="secondary" className="bg-blue-50 text-blue-600">
+              {categoryName}
+            </Badge>
+            {subcategoryName && (
+              <Badge variant="secondary" className="bg-blue-50 text-blue-600">
+                {subcategoryName}
+              </Badge>
+            )}
+          </>
         )}
       </div>
     </div>

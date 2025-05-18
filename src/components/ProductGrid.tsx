@@ -1,7 +1,7 @@
-
 import React from 'react';
-import { Loader2, SlidersHorizontal } from 'lucide-react';
+import { Loader2, SlidersHorizontal, Package } from 'lucide-react';
 import ProductCard from '@/components/ProductCard';
+import { Button } from '@/components/ui/button';
 
 interface Product {
   id: string;
@@ -28,21 +28,35 @@ const ProductGrid: React.FC<ProductGridProps> = ({
 }) => {
   if (loading) {
     return (
-      <div className="flex flex-col justify-center items-center h-64 bg-white/50 backdrop-blur-sm rounded-xl border border-gray-100 shadow-sm">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500 mb-3" />
-        <p className="text-gray-600">Loading products...</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
+            <div className="aspect-square bg-gray-50 animate-pulse" />
+            <div className="p-4">
+              <div className="h-4 bg-gray-100 rounded w-3/4 mb-2 animate-pulse" />
+              <div className="h-4 bg-gray-100 rounded w-1/2 mb-4 animate-pulse" />
+              <div className="h-8 bg-gray-100 rounded animate-pulse" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
   
   if (filteredProducts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-center bg-white rounded-xl border border-gray-100 shadow-sm p-8">
+      <div className="flex flex-col items-center justify-center h-96 text-center bg-white rounded-xl border border-gray-100 shadow-sm p-8">
         <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-          <SlidersHorizontal className="h-8 w-8 text-gray-400" />
+          <Package className="h-8 w-8 text-gray-400" />
         </div>
-        <p className="text-xl font-medium text-gray-700 mb-2">No products found</p>
-        <p className="text-gray-500 max-w-md">Try adjusting your filters or search term to find what you're looking for.</p>
+        <h2 className="text-xl font-medium text-gray-700 mb-2">No products found</h2>
+        <p className="text-gray-500 max-w-md mb-6">
+          We couldn't find any products matching your criteria. Try adjusting your filters or search term.
+        </p>
+        <Button variant="outline" onClick={() => window.location.reload()}>
+          <SlidersHorizontal className="h-4 w-4 mr-2" />
+          Reset Filters
+        </Button>
       </div>
     );
   }

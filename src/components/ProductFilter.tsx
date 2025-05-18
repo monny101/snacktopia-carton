@@ -1,7 +1,8 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Filter, X } from 'lucide-react';
+import { Filter, X, Check } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import type { Database } from '@/integrations/supabase/types';
 
 type Category = Database['public']['Tables']['categories']['Row'];
@@ -41,98 +42,135 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
   resetFilters
 }) => {
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 mb-8">
-      <div className="flex flex-col md:flex-row gap-4 mb-4">
-        {/* Search input */}
-        <div className="flex-1">
-          <input
-            type="text"
-            placeholder="Search products..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        
-        {/* Sort options */}
-        <div className="flex items-center gap-2">
-          <label htmlFor="sort" className="text-sm font-medium whitespace-nowrap">Sort by:</label>
-          <select
-            id="sort"
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as 'default' | 'priceAsc' | 'priceDesc')}
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-100">
+      {/* Mobile Filter Header */}
+      <div className="p-4 lg:hidden">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowFilters(false)}
+            className="text-gray-500 hover:text-gray-700"
           >
-            <option value="default">Default</option>
-            <option value="priceAsc">Price: Low to High</option>
-            <option value="priceDesc">Price: High to Low</option>
-          </select>
+            <X className="h-5 w-5" />
+          </Button>
         </div>
-        
-        {/* Filter toggle button (mobile) */}
-        <Button 
-          variant="outline" 
-          className="md:hidden"
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <Filter className="mr-2 h-4 w-4" />
-          Filters
-        </Button>
       </div>
-      
-      {/* Filter options - visible on desktop or when toggled on mobile */}
-      <div className={`md:flex ${showFilters ? 'block' : 'hidden md:block'}`}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:flex gap-4">
-          {/* Category filter */}
-          <div className="flex flex-col">
-            <label htmlFor="category" className="text-sm font-medium mb-1">Category</label>
-            <select
-              id="category"
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={selectedCategory || ''}
-              onChange={(e) => setSelectedCategory(e.target.value || null)}
+
+      {/* Filter Sections */}
+      <div className="p-4">
+        <h3 className="text-sm font-medium text-gray-900 mb-4">Sort By</h3>
+        <div className="space-y-2">
+          {[
+            { value: 'default', label: 'Relevance' },
+            { value: 'priceAsc', label: 'Price: Low to High' },
+            { value: 'priceDesc', label: 'Price: High to Low' }
+          ].map((option) => (
+            <button
+              key={option.value}
+              className={`flex items-center justify-between w-full px-2 py-1.5 text-sm rounded-md ${
+                sortBy === option.value 
+                  ? 'bg-blue-50 text-blue-600 font-medium' 
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+              onClick={() => setSortBy(option.value as typeof sortBy)}
             >
-              <option value="">All Categories</option>
-              {categories.map(category => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          {/* Subcategory filter - only visible when a category is selected */}
-          {selectedCategory && (
-            <div className="flex flex-col">
-              <label htmlFor="subcategory" className="text-sm font-medium mb-1">Subcategory</label>
-              <select
-                id="subcategory"
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={selectedSubcategory || ''}
-                onChange={(e) => setSelectedSubcategory(e.target.value || null)}
+              {option.label}
+              {sortBy === option.value && <Check className="h-4 w-4" />}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="p-4">
+        <h3 className="text-sm font-medium text-gray-900 mb-4">Categories</h3>
+        <div className="space-y-2">
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => {
+                if (selectedCategory === category.id) {
+                  setSelectedCategory(null);
+                  setSelectedSubcategory(null);
+                } else {
+                  setSelectedCategory(category.id);
+                  setSelectedSubcategory(null);
+                }
+              }}
+              className={`flex items-center justify-between w-full px-2 py-1.5 text-sm rounded-md ${
+                selectedCategory === category.id 
+                  ? 'bg-blue-50 text-blue-600 font-medium' 
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {category.name}
+              {selectedCategory === category.id && <Check className="h-4 w-4" />}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {selectedCategory && categorySubcategories.length > 0 && (
+        <div className="p-4">
+          <h3 className="text-sm font-medium text-gray-900 mb-4">Subcategories</h3>
+          <div className="space-y-2">
+            {categorySubcategories.map((subcategory) => (
+              <button
+                key={subcategory.id}
+                onClick={() => {
+                  if (selectedSubcategory === subcategory.id) {
+                    setSelectedSubcategory(null);
+                  } else {
+                    setSelectedSubcategory(subcategory.id);
+                  }
+                }}
+                className={`flex items-center justify-between w-full px-2 py-1.5 text-sm rounded-md ${
+                  selectedSubcategory === subcategory.id 
+                    ? 'bg-blue-50 text-blue-600 font-medium' 
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
               >
-                <option value="">All Subcategories</option>
-                {categorySubcategories.map(subcategory => (
-                  <option key={subcategory.id} value={subcategory.id}>
-                    {subcategory.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          
-          {/* Reset filters button */}
-          <div className="flex items-end">
-            <Button 
-              variant="ghost" 
-              onClick={resetFilters}
-              className="text-blue-500 hover:text-blue-700"
-            >
-              Reset Filters
-            </Button>
+                {subcategory.name}
+                {selectedSubcategory === subcategory.id && <Check className="h-4 w-4" />}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="p-4">
+        <h3 className="text-sm font-medium text-gray-900 mb-4">Availability</h3>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <label htmlFor="in-stock" className="text-sm text-gray-700">In Stock Only</label>
+            <Switch id="in-stock" />
+          </div>
+          <div className="flex items-center justify-between">
+            <label htmlFor="deals" className="text-sm text-gray-700">Special Deals</label>
+            <Switch id="deals" />
+          </div>
+          <div className="flex items-center justify-between">
+            <label htmlFor="featured" className="text-sm text-gray-700">Featured Items</label>
+            <Switch id="featured" />
           </div>
         </div>
       </div>
+
+      {/* Reset Filters */}
+      {(selectedCategory || selectedSubcategory || sortBy !== 'default') && (
+        <div className="p-4">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={resetFilters}
+            className="w-full text-gray-600 hover:text-gray-900"
+          >
+            <X className="h-4 w-4 mr-2" />
+            Reset All Filters
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

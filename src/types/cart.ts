@@ -1,4 +1,3 @@
-
 /**
  * Cart types for the application
  */
@@ -25,4 +24,5 @@ export interface CartContextType {
   updateQuantity: (id: string, quantity: number) => void;
   getItemCount: () => number;
   subtotal: number;
+  getTotalCost: () => number;
 }
