@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ShoppingBag, TrendingUp, Truck, ThumbsUp } from 'lucide-react';
@@ -8,6 +9,7 @@ import Categories from '@/components/Categories';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { ensureUserIsAdmin, updateUserMetadataRole } from '@/utils/adminHelpers';
 import { toast } from '@/hooks/use-toast';
+import HeroCarousel from '@/components/HeroCarousel';
 
 const Home: React.FC = () => {
   const { user, profile } = useAuth();
@@ -24,7 +26,7 @@ const Home: React.FC = () => {
           
           const isAdmin = await ensureUserIsAdmin(user.id);
           if (isAdmin) {
-            await updateUserMetadataRole(user.id);
+            await updateUserMetadataRole(user.id, 'admin');
             localStorage.setItem(localStorageKey, 'true');
             
             toast({
@@ -49,7 +51,7 @@ const Home: React.FC = () => {
       {/* Promotional Marquee */}
       <PromoMarquee />
 
-      {/* Hero Section */}
+      {/* Hero Section with Carousel */}
       <section className="relative overflow-hidden bg-gradient-to-br from-blue-800 via-mondoBlue to-blue-600 py-20 md:py-[100px]">
         {/* Decorative elements */}
         <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-blue-400/20 blur-3xl" />
@@ -80,10 +82,7 @@ const Home: React.FC = () => {
               </div>
             </div>
             <div className="hidden md:block">
-              <div className="relative rounded-lg overflow-hidden shadow-2xl border border-white/10">
-                <img src="https://images.unsplash.com/photo-1604719312566-8912e9227c6a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Assorted products" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-blue-900/60 to-transparent"></div>
-              </div>
+              <HeroCarousel />
             </div>
           </div>
         </div>

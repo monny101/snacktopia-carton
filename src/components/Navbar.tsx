@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth/AuthContext';
+import { useCart } from '@/contexts/CartContext';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +21,8 @@ import {
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { isAuthenticated, isAdmin, isStaff, profile, logout } = useAuth();
+  const { getItemCount } = useCart();
+  const cartItemCount = getItemCount();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -71,6 +75,18 @@ const Navbar: React.FC = () => {
                       <span>Cart</span>
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/wishlist" className="cursor-pointer">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Wishlist</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/orders" className="cursor-pointer">
+                      <Package className="mr-2 h-4 w-4" />
+                      <span>My Orders</span>
+                    </Link>
+                  </DropdownMenuItem>
                   
                   {/* Admin Link */}
                   {isAdmin && (
@@ -121,7 +137,14 @@ const Navbar: React.FC = () => {
             {/* Cart Link (always visible) */}
             <Link to="/cart" className="relative">
               <ShoppingCart className="h-6 w-6 hover:text-yellow-300 transition-colors" />
-              {/* You can add a cart count badge here if needed */}
+              {cartItemCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-2 -right-2 h-5 min-w-5 flex items-center justify-center p-0 text-xs"
+                >
+                  {cartItemCount}
+                </Badge>
+              )}
             </Link>
           </div>
 
@@ -129,7 +152,14 @@ const Navbar: React.FC = () => {
           <div className="md:hidden flex items-center">
             <Link to="/cart" className="mr-4 relative">
               <ShoppingCart className="h-6 w-6" />
-              {/* You can add a cart count badge here if needed */}
+              {cartItemCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-2 -right-2 h-5 min-w-5 flex items-center justify-center p-0 text-xs"
+                >
+                  {cartItemCount}
+                </Badge>
+              )}
             </Link>
             <button
               onClick={toggleMenu}
@@ -150,11 +180,17 @@ const Navbar: React.FC = () => {
           <Link to="/products" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
             Products
           </Link>
+          <Link to="/wishlist" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
+            Wishlist
+          </Link>
           
           {isAuthenticated ? (
             <>
               <Link to="/profile" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
                 Profile
+              </Link>
+              <Link to="/orders" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
+                My Orders
               </Link>
               {isAdmin && (
                 <Link to="/admin" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
