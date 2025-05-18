@@ -219,33 +219,42 @@ export type Database = {
         Row: {
           address_id: string | null
           created_at: string
+          delivery_notes: string | null
           delivery_type: string | null
+          estimated_delivery: string | null
           id: string
           payment_method: string | null
           status: string | null
           total_amount: number
+          tracking_number: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           address_id?: string | null
           created_at?: string
+          delivery_notes?: string | null
           delivery_type?: string | null
+          estimated_delivery?: string | null
           id?: string
           payment_method?: string | null
           status?: string | null
           total_amount: number
+          tracking_number?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           address_id?: string | null
           created_at?: string
+          delivery_notes?: string | null
           delivery_type?: string | null
+          estimated_delivery?: string | null
           id?: string
           payment_method?: string | null
           status?: string | null
           total_amount?: number
+          tracking_number?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -255,6 +264,41 @@ export type Database = {
             columns: ["address_id"]
             isOneToOne: false
             referencedRelation: "addresses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_images: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          image_url: string
+          is_primary: boolean | null
+          product_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          image_url: string
+          is_primary?: boolean | null
+          product_id: string
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string
+          is_primary?: boolean | null
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -392,6 +436,35 @@ export type Database = {
           },
         ]
       }
+      wishlist: {
+        Row: {
+          created_at: string | null
+          id: string
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wishlist_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -404,6 +477,10 @@ export type Database = {
       create_inventory_alert: {
         Args: { product_id: string; threshold: number; alert_message: string }
         Returns: string
+      }
+      exec_sql: {
+        Args: { sql_query: string }
+        Returns: Json
       }
       get_user_role: {
         Args: { user_id: string }

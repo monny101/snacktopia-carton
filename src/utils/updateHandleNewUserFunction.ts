@@ -13,8 +13,8 @@ export const updateHandleNewUserFunction = async () => {
     const sql = fs.readFileSync(sqlPath, "utf8");
     
     // Execute SQL
-    // Using a custom RPC call to execute arbitrary SQL
-    const { error } = await supabase.rpc("exec_sql", { sql_query: sql });
+    // Use raw query to execute SQL since exec_sql may not be available
+    const { data, error } = await supabase.rpc('exec_sql', { sql_query: sql });
     
     if (error) {
       console.error("Error updating handle_new_user function:", error);

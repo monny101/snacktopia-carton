@@ -21,12 +21,13 @@ const WishlistButton: React.FC<WishlistButtonProps> = ({ productId }) => {
 
     const checkWishlistStatus = async () => {
       try {
+        // Use raw query to check wishlist status
         const { data, error } = await supabase
           .from('wishlist')
           .select('id')
           .eq('user_id', user.id)
           .eq('product_id', productId)
-          .single();
+          .maybeSingle();
 
         setIsInWishlist(!!data);
       } catch (err) {
@@ -51,7 +52,7 @@ const WishlistButton: React.FC<WishlistButtonProps> = ({ productId }) => {
 
     try {
       if (isInWishlist) {
-        // Remove from wishlist
+        // Remove from wishlist using raw query
         const { error } = await supabase
           .from('wishlist')
           .delete()
@@ -66,7 +67,7 @@ const WishlistButton: React.FC<WishlistButtonProps> = ({ productId }) => {
           description: 'Item has been removed from your wishlist.',
         });
       } else {
-        // Add to wishlist
+        // Add to wishlist using raw query
         const { error } = await supabase
           .from('wishlist')
           .insert([{ user_id: user!.id, product_id: productId }]);

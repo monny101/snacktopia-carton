@@ -8,21 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Trash2, ShoppingCart, Loader2, Heart } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ErrorCard } from '@/components/ui/error-card';
-
-interface WishlistItem {
-  id: string;
-  user_id: string;
-  product_id: string;
-  created_at: string;
-  product: {
-    id: string;
-    name: string;
-    description: string;
-    price: number;
-    image_url: string;
-    quantity: number;
-  };
-}
+import { WishlistItem } from '@/types/wishlist';
 
 const WishlistPage: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
@@ -44,19 +30,19 @@ const WishlistPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
+      // Use raw query with join to get wishlist items with product details
       const { data, error } = await supabase
         .from('wishlist')
         .select(`
           *,
-          product: products (
-            id, name, description, price, image_url, quantity
-          )
+          product:products(*)
         `)
         .eq('user_id', user?.id);
 
       if (error) throw error;
 
-      setWishlistItems(data as WishlistItem[]);
+      // Cast data to the correct type
+      setWishlistItems(data as unknown as WishlistItem[]);
     } catch (err: any) {
       console.error('Error fetching wishlist:', err);
       setError('Failed to load your wishlist items. Please try again.');
@@ -72,6 +58,7 @@ const WishlistPage: React.FC = () => {
 
   const removeFromWishlist = async (wishlistItemId: string) => {
     try {
+      // Use raw query to delete wishlist item
       const { error } = await supabase
         .from('wishlist')
         .delete()
@@ -97,9 +84,11 @@ const WishlistPage: React.FC = () => {
   };
 
   const addToCart = (product: WishlistItem['product']) => {
+    if (!product) return;
+    
     addItem({
       id: product.id,
-      name: product.name,
+      name: product.name || '',
       price: product.price,
       image: product.image_url || '',
       quantity: 1
@@ -171,35 +160,37 @@ const WishlistPage: React.FC = () => {
             <div key={item.id} className="bg-white rounded-lg overflow-hidden border shadow-sm hover:shadow-md transition-shadow">
               <div className="relative h-48 overflow-hidden bg-gray-100">
                 <img
-                  src={item.product.image_url || 'https://placehold.co/300x200?text=No+Image'}
-                  alt={item.product.name}
+                  src={item.product?.image_url || 'https://placehold.co/300x200?text=No+Image'}
+                  alt={item.product?.name}
                   className="w-full h-full object-cover"
                 />
               </div>
               
               <div className="p-4">
-                <Link to={`/product/${item.product.id}`} className="block">
+                <Link to={`/product/${item.product?.id}`} className="block">
                   <h3 className="text-lg font-semibold text-gray-800 mb-2 hover:text-blue-600">
-                    {item.product.name}
+                    {item.product?.name}
                   </h3>
                 </Link>
                 
                 <p className="text-gray-500 line-clamp-2 mb-3">
-                  {item.product.description || 'No description available'}
+                  {item.product?.description || 'No description available'}
                 </p>
                 
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-blue-600 font-semibold">₦{item.product.price.toLocaleString()}</span>
-                  <span className={item.product.quantity > 0 ? "text-green-600 text-sm" : "text-red-600 text-sm"}>
-                    {item.product.quantity > 0 ? 'In Stock' : 'Out of Stock'}
+                  <span className="text-blue-600 font-semibold">
+                    ₦{item.product?.price.toLocaleString()}
+                  </span>
+                  <span className={item.product && item.product.quantity > 0 ? "text-green-600 text-sm" : "text-red-600 text-sm"}>
+                    {item.product && item.product.quantity > 0 ? 'In Stock' : 'Out of Stock'}
                   </span>
                 </div>
                 
                 <div className="flex space-x-2">
                   <Button 
                     className="flex-1"
-                    onClick={() => addToCart(item.product)}
-                    disabled={item.product.quantity <= 0}
+                    onClick={() => item.product && addToCart(item.product)}
+                    disabled={!item.product || item.product.quantity <= 0}
                   >
                     <ShoppingCart className="mr-2 h-4 w-4" />
                     Add to Cart
