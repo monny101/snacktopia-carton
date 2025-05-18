@@ -1,227 +1,181 @@
 
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { 
-  ShoppingCart, Menu, X, User, Package, LogOut, 
-  Settings, ChevronDown
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Menu, User, ShoppingCart, Heart } from 'lucide-react';
 import { useAuth } from '@/contexts/auth/AuthContext';
+import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
-import { Badge } from '@/components/ui/badge';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 const Navbar: React.FC = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { isAuthenticated, isAdmin, isStaff, profile, logout } = useAuth();
-  const { getItemCount } = useCart();
-  const cartItemCount = getItemCount();
+  const { isAuthenticated, user, logout } = useAuth();
+  const { getItemCount, getTotalCost } = useCart();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
+  // Close mobile menu on navigation
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
   };
 
-  const handleLogout = () => {
-    logout();
-    setIsMenuOpen(false);
-  };
+  const itemCount = getItemCount();
+  const totalCost = getTotalCost();
 
   return (
-    <nav className="bg-blue-600 text-white sticky top-0 z-10 shadow-md">
+    <header className="bg-white shadow-sm sticky top-0 z-30">
       <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center">
-            <Link to="/" className="text-xl font-bold flex items-center">
-              <span className="text-yellow-300">Mondo</span>
-              <span className="ml-1">Carton King</span>
+          <div className="flex-shrink-0">
+            <Link to="/" className="text-blue-600 text-xl font-bold">
+              Mondo Carton King
             </Link>
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-6">
-            <Link to="/" className="hover:text-yellow-300 transition-colors">Home</Link>
-            <Link to="/products" className="hover:text-yellow-300 transition-colors">Products</Link>
-            
-            {/* Authentication Links */}
-            {isAuthenticated ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="p-0 px-2 text-white hover:text-yellow-300 hover:bg-transparent">
-                    <User className="mr-1 h-4 w-4" />
-                    {profile?.full_name && profile.full_name.split(' ')[0]}
-                    <ChevronDown className="ml-1 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile" className="cursor-pointer">
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Profile</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/cart" className="cursor-pointer">
-                      <ShoppingCart className="mr-2 h-4 w-4" />
-                      <span>Cart</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/wishlist" className="cursor-pointer">
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Wishlist</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/orders" className="cursor-pointer">
-                      <Package className="mr-2 h-4 w-4" />
-                      <span>My Orders</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  
-                  {/* Admin Link */}
-                  {isAdmin && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Administration</DropdownMenuLabel>
-                      <DropdownMenuItem asChild>
-                        <Link to="/admin" className="cursor-pointer">
-                          <Settings className="mr-2 h-4 w-4" />
-                          <span>Admin Panel</span>
-                        </Link>
-                      </DropdownMenuItem>
-                    </>
-                  )}
-
-                  {/* Staff Link */}
-                  {isStaff && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Staff</DropdownMenuLabel>
-                      <DropdownMenuItem asChild>
-                        <Link to="/staff" className="cursor-pointer">
-                          <Package className="mr-2 h-4 w-4" />
-                          <span>Staff Panel</span>
-                        </Link>
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Logout</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
+          <nav className="hidden md:flex space-x-8">
+            <Link to="/" className="text-gray-700 hover:text-blue-600 px-2 py-1 rounded-md">
+              Home
+            </Link>
+            <Link to="/products" className="text-gray-700 hover:text-blue-600 px-2 py-1 rounded-md">
+              Products
+            </Link>
+            {isAuthenticated && (
               <>
-                <Link to="/login" className="hover:text-yellow-300 transition-colors">Login</Link>
-                <Link to="/register">
-                  <Button className="bg-yellow-500 hover:bg-yellow-600 text-blue-900 font-medium">
-                    Sign Up
-                  </Button>
+                <Link to="/profile" className="text-gray-700 hover:text-blue-600 px-2 py-1 rounded-md">
+                  My Account
+                </Link>
+                <Link to="/wishlist" className="text-gray-700 hover:text-blue-600 px-2 py-1 rounded-md flex items-center">
+                  <Heart className="h-4 w-4 mr-1" /> Wishlist
                 </Link>
               </>
             )}
-            
-            {/* Cart Link (always visible) */}
-            <Link to="/cart" className="relative">
-              <ShoppingCart className="h-6 w-6 hover:text-yellow-300 transition-colors" />
-              {cartItemCount > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-2 -right-2 h-5 min-w-5 flex items-center justify-center p-0 text-xs"
-                >
-                  {cartItemCount}
-                </Badge>
-              )}
-            </Link>
-          </div>
+          </nav>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
-            <Link to="/cart" className="mr-4 relative">
+          {/* Right side buttons */}
+          <div className="flex items-center space-x-4">
+            {/* Cart */}
+            <Link to="/cart" className="relative text-gray-700 hover:text-blue-600">
               <ShoppingCart className="h-6 w-6" />
-              {cartItemCount > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-2 -right-2 h-5 min-w-5 flex items-center justify-center p-0 text-xs"
-                >
-                  {cartItemCount}
-                </Badge>
+              {itemCount > 0 && (
+                <>
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-medium rounded-full h-5 min-w-5 flex items-center justify-center px-1">
+                    {itemCount}
+                  </span>
+                  <span className="sr-only">{itemCount} items in cart</span>
+                </>
               )}
             </Link>
+
+            {/* User menu */}
+            {isAuthenticated ? (
+              <div className="relative">
+                <Link to="/profile" className="flex items-center text-gray-700 hover:text-blue-600">
+                  <User className="h-6 w-6" />
+                </Link>
+              </div>
+            ) : (
+              <div className="hidden md:flex space-x-2">
+                <Link to="/login">
+                  <Button variant="outline" size="sm">Login</Button>
+                </Link>
+                <Link to="/register">
+                  <Button size="sm">Register</Button>
+                </Link>
+              </div>
+            )}
+
+            {/* Mobile menu button */}
             <button
-              onClick={toggleMenu}
-              className="text-white hover:text-yellow-300 focus:outline-none"
+              className="md:hidden text-gray-700 hover:text-blue-600"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              <Menu className="h-6 w-6" />
+              <span className="sr-only">Open main menu</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile menu */}
-      <div className={`md:hidden ${isMenuOpen ? 'block' : 'hidden'}`}>
-        <div className="px-4 pt-2 pb-4 space-y-3 bg-blue-700">
-          <Link to="/" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
-            Home
-          </Link>
-          <Link to="/products" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
-            Products
-          </Link>
-          <Link to="/wishlist" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
-            Wishlist
-          </Link>
-          
-          {isAuthenticated ? (
-            <>
-              <Link to="/profile" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
-                Profile
-              </Link>
-              <Link to="/orders" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
-                My Orders
-              </Link>
-              {isAdmin && (
-                <Link to="/admin" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
-                  Admin Panel
+      {/* Mobile Navigation */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden bg-white shadow-lg">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            <Link
+              to="/"
+              className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-base"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Home
+            </Link>
+            <Link
+              to="/products"
+              className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-base"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Products
+            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link
+                  to="/profile"
+                  className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-base"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  My Account
                 </Link>
-              )}
-              {isStaff && (
-                <Link to="/staff" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
-                  Staff Panel
+                <Link 
+                  to="/wishlist"
+                  className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-base flex items-center"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Heart className="h-4 w-4 mr-2" /> Wishlist
                 </Link>
-              )}
-              <button 
-                onClick={handleLogout} 
-                className="block w-full text-left hover:text-yellow-300"
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <Link to="/login" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
-                Login
-              </Link>
-              <Link to="/register" className="block hover:text-yellow-300" onClick={() => setIsMenuOpen(false)}>
-                Sign Up
-              </Link>
-            </>
-          )}
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-base w-full text-left"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <div className="flex flex-col space-y-2 px-3 py-2">
+                <Link
+                  to="/login"
+                  className="block"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Button variant="outline" className="w-full">Login</Button>
+                </Link>
+                <Link
+                  to="/register"
+                  className="block"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Button className="w-full">Register</Button>
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </nav>
+      )}
+    </header>
   );
 };
 
