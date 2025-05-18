@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { 
@@ -25,6 +25,7 @@ import { verifyStaffPrivileges } from '@/utils/adminHelpers';
 
 const StaffLayout: React.FC = () => {
   const { isStaff, isAdmin, isAuthenticated, isLoading, logout, profile, user, profileFetchAttempted } = useAuth();
+  const [verifyingAccess, setVerifyingAccess] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -33,8 +34,10 @@ const StaffLayout: React.FC = () => {
     // Only check access if we've finished initial loading and profile fetch
     if (!isLoading && profileFetchAttempted && isAuthenticated && !isStaff && !isAdmin && user) {
       console.log("Verifying staff access for user:", user.id);
+      setVerifyingAccess(true);
       
       verifyStaffPrivileges(user.id).then(hasAccess => {
+        setVerifyingAccess(false);
         if (hasAccess) {
           console.log("Staff verification successful, allowing access");
           // Force profile refresh to update state
@@ -52,7 +55,7 @@ const StaffLayout: React.FC = () => {
     }
   }, [isLoading, isAuthenticated, isStaff, isAdmin, profile, profileFetchAttempted, navigate, user]);
 
-  if (isLoading || !profileFetchAttempted) {
+  if (isLoading || verifyingAccess || !profileFetchAttempted) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />

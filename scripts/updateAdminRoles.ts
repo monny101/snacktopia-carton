@@ -2,12 +2,14 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * This script updates all existing users to have admin role
- * Run with: ts-node scripts/updateAdminRoles.ts
+ * This script promotes specific users to admin role
+ * Usage:
+ * - To promote one user: ts-node scripts/updateAdminRoles.ts user@example.com
+ * - To promote first admin only: ts-node scripts/updateAdminRoles.ts --setup-first-admin
  */
-export const updateAdminRoles = async () => {
+export const updateAdminRoles = async (targetEmail?: string, setupFirstAdmin: boolean = false) => {
   try {
-    console.log("Fetching all users...");
+    console.log("Starting admin role management...");
     const { data: users, error: usersError } = await supabase.auth.admin.listUsers();
     
     if (usersError) {
@@ -17,9 +19,44 @@ export const updateAdminRoles = async () => {
     
     console.log(`Found ${users.users.length} users`);
     
-    // Update all users to have admin role in their user metadata
-    for (const user of users.users) {
-      console.log(`Updating user ${user.email} to admin role...`);
+    // Check if we already have an admin
+    if (setupFirstAdmin) {
+      const { data: admins, error: adminsError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('role', 'admin')
+        .limit(1);
+        
+      if (!adminsError && admins && admins.length > 0) {
+        console.log("Admin user already exists, skipping first admin setup");
+        return;
+      }
+    }
+    
+    // Filter users based on parameters
+    let usersToUpdate = users.users;
+    
+    if (targetEmail) {
+      console.log(`Targeting specific user: ${targetEmail}`);
+      usersToUpdate = users.users.filter(user => user.email === targetEmail);
+      
+      if (usersToUpdate.length === 0) {
+        console.error(`No user found with email: ${targetEmail}`);
+        return;
+      }
+    } else if (setupFirstAdmin) {
+      // If setting up first admin and no specific user is requested, 
+      // just pick the first user (usually during initial setup)
+      console.log("Selecting first user as admin for initial setup");
+      usersToUpdate = usersToUpdate.slice(0, 1);
+    } else {
+      console.error("No target specified. Use --setup-first-admin or provide an email");
+      return;
+    }
+    
+    // Update specified users to have admin role
+    for (const user of usersToUpdate) {
+      console.log(`Promoting user ${user.email} to admin role...`);
       
       // Update user metadata to include admin role
       const { error: updateError } = await supabase.auth.admin.updateUserById(
@@ -74,7 +111,7 @@ export const updateAdminRoles = async () => {
       }
     }
     
-    console.log("Finished updating all users to admin role");
+    console.log("Finished updating admin roles");
   } catch (err) {
     console.error("Error in updateAdminRoles:", err);
   } finally {
@@ -84,5 +121,9 @@ export const updateAdminRoles = async () => {
 
 // Run the script if this file is executed directly
 if (require.main === module) {
-  updateAdminRoles().catch(console.error);
+  const args = process.argv.slice(2);
+  const targetEmail = args.find(arg => !arg.startsWith('--'));
+  const setupFirstAdmin = args.includes('--setup-first-admin');
+  
+  updateAdminRoles(targetEmail, setupFirstAdmin).catch(console.error);
 }

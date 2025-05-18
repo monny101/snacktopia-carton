@@ -7,13 +7,18 @@ import { updateAdminRoles } from './updateAdminRoles';
 // and then ensure all users have profiles with the correct role
 const runSetup = async () => {
   console.log("Setting up admin user...");
-  await setupAdmin();
+  const adminSetupSuccess = await setupAdmin();
   
   console.log("Ensuring all users have profiles...");
   await ensureProfiles();
   
-  console.log("Updating all users to admin role...");
-  await updateAdminRoles();
+  // Only set up a first admin if needed and initial setup was successful
+  if (adminSetupSuccess) {
+    console.log("Setting up first admin user if none exists...");
+    await updateAdminRoles(undefined, true); // Setup first admin only
+  } else {
+    console.log("Skipping admin role setup as it may have already been done");
+  }
   
   console.log("Setup complete!");
 };

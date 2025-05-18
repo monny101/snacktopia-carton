@@ -27,45 +27,16 @@ export const ensureUserIsAdmin = async (userId: string): Promise<boolean> => {
       return false;
     }
     
-    if (!data) {
-      console.log("No profile found, creating admin profile");
-      
-      // Create admin profile if none exists
-      const { error: insertError } = await supabase
-        .from('profiles')
-        .insert({
-          id: userId,
-          role: 'admin',
-          full_name: 'Admin User'
-        });
-        
-      if (insertError) {
-        console.error("Error creating admin profile:", insertError);
-        return false;
-      }
-      
-      console.log("Created new admin profile for user:", userId);
-      return true;
-    } else if (data.role !== 'admin') {
-      console.log("User exists but is not admin, updating role");
-      
-      // Update to admin if needed
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ role: 'admin' })
-        .eq('id', userId);
-        
-      if (updateError) {
-        console.error("Error updating user to admin:", updateError);
-        return false;
-      }
-      
-      console.log("Updated user to admin role:", userId);
+    // Return true if already admin
+    if (data?.role === 'admin') {
+      console.log("User is already an admin");
       return true;
     }
     
-    console.log("User is already an admin");
-    return data.role === 'admin';
+    // We should NOT automatically make users admins
+    // Only return true if they are already an admin
+    console.log("User is not an admin");
+    return false;
   } catch (err) {
     console.error("Exception in ensureUserIsAdmin:", err);
     return false;
@@ -74,30 +45,41 @@ export const ensureUserIsAdmin = async (userId: string): Promise<boolean> => {
 
 /**
  * Updates the user metadata to include the admin role
+ * Only admins can call this function successfully
  * @param userId The ID of the user to update
+ * @param adminUserId The ID of the admin making the change
  * @returns Promise<boolean> True if the update was successful
  */
-export const updateUserMetadataRole = async (userId: string): Promise<boolean> => {
+export const updateUserMetadataRole = async (
+  userId: string, 
+  adminUserId: string
+): Promise<boolean> => {
   try {
     if (!userId) {
       console.error("Invalid user ID provided to updateUserMetadataRole");
       return false;
     }
     
-    // Get current user to access their metadata
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      console.error("Failed to retrieve current user");
+    // Verify the user making changes is an admin
+    const isAdmin = await ensureUserIsAdmin(adminUserId);
+    if (!isAdmin) {
+      console.error("Only admins can update user roles");
       return false;
     }
     
-    console.log("Updating metadata for user:", userId);
+    console.log("Admin user is updating metadata for user:", userId);
+    
+    // Get current user metadata first
+    const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
+    if (userError || !userData?.user) {
+      console.error("Failed to retrieve user data:", userError);
+      return false;
+    }
     
     // Update the user metadata with admin role
-    const { error } = await supabase.auth.updateUser({
-      data: { 
-        ...user.user_metadata,
+    const { error } = await supabase.auth.admin.updateUserById(userId, {
+      user_metadata: { 
+        ...userData.user.user_metadata,
         role: 'admin' 
       }
     });
@@ -107,7 +89,18 @@ export const updateUserMetadataRole = async (userId: string): Promise<boolean> =
       return false;
     }
     
-    console.log("Updated user metadata with admin role");
+    // Also update the profile
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ role: 'admin' })
+      .eq('id', userId);
+      
+    if (profileError) {
+      console.error("Error updating profile role:", profileError);
+      return false;
+    }
+    
+    console.log("Updated user metadata and profile with admin role");
     return true;
   } catch (err) {
     console.error("Exception in updateUserMetadataRole:", err);

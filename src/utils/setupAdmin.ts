@@ -3,24 +3,24 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const setupAdmin = async () => {
   try {
-    console.log("Setting up admin roles...");
+    console.log("Setting up initial admin user if none exists...");
 
     // Check if admin role exists in profiles
-    const { data: profileData, error: profileError } = await supabase
+    const { data: adminData, error: adminError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('role', 'customer')
+      .eq('role', 'admin')
       .limit(1);
     
-    if (profileError) {
-      console.error("Error checking admin profiles:", profileError);
+    if (adminError) {
+      console.error("Error checking admin profiles:", adminError);
       return false;
     }
     
-    console.log("Admin check result:", profileData);
+    console.log("Admin check result:", adminData);
     
     // If no admin exists, try to create one
-    if (!profileData || profileData.length === 0) {
+    if (!adminData || adminData.length === 0) {
       console.log("No admin found, attempting to create one");
       
       try {
@@ -31,7 +31,7 @@ export const setupAdmin = async () => {
           options: {
             data: {
               full_name: 'Admin User',
-              role: 'customer'
+              role: 'admin' // Setting the correct role here
             }
           }
         });
@@ -50,7 +50,7 @@ export const setupAdmin = async () => {
             .insert({
               id: userData.user.id,
               full_name: 'Admin User',
-              role: 'customer'
+              role: 'admin' // Explicitly setting admin role
             });
           
           if (insertError) {
@@ -65,6 +65,8 @@ export const setupAdmin = async () => {
         console.log("Admin user may already exist, skipping creation");
         return true;
       }
+    } else {
+      console.log("Admin user already exists, skipping creation");
     }
     
     return true;
