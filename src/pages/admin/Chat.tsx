@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
 import { Loader2, Send } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -52,7 +50,7 @@ const AdminChat: React.FC = () => {
             message,
             created_at,
             is_read,
-            profiles:user_id(full_name)
+            users:profiles!chat_messages_user_id_fkey(full_name)
           `)
           .order('created_at', { ascending: false });
         
@@ -65,7 +63,7 @@ const AdminChat: React.FC = () => {
           if (!usersMap.has(msg.user_id)) {
             usersMap.set(msg.user_id, {
               id: msg.user_id,
-              full_name: msg.profiles?.full_name || 'Unknown User',
+              full_name: msg.users?.full_name || 'Unknown User',
               unread: msg.is_read ? 0 : 1,
               latest_message: msg.message,
               latest_message_time: msg.created_at

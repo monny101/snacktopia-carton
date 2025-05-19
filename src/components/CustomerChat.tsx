@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/auth/AuthContext';
@@ -88,20 +87,28 @@ const CustomerChat: React.FC = () => {
     
     try {
       setLoading(true);
+      console.log("Fetching chat messages for user:", user.id);
       
       const { data, error } = await supabase
         .from('chat_messages')
         .select(`
           *,
-          profiles:staff_id(full_name)
+          staff:profiles!chat_messages_staff_id_fkey(full_name)
         `)
         .or(`user_id.eq.${user.id},staff_id.eq.${user.id}`)
         .order('created_at', { ascending: true });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching messages:', error);
+        throw error;
+      }
       
-      // Cast as any first to avoid TypeScript errors with the profiles join
-      setMessages((data as any) || []);
+      console.log("Chat messages fetched:", data);
+      if (data) {
+        setMessages(data as any);
+      } else {
+        setMessages([]);
+      }
       
       // Reset unread count and mark messages as read
       setUnreadCount(0);
@@ -111,7 +118,7 @@ const CustomerChat: React.FC = () => {
       console.error('Error fetching messages:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load chat history',
+        description: 'Failed to load chat history. Please try again later.',
         variant: 'destructive',
       });
     } finally {

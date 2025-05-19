@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -37,11 +36,11 @@ interface Order {
   delivery_type: 'delivery' | 'pickup';
   created_at: string;
   updated_at: string;
-  profiles: {
-    full_name: string;
-    phone: string;
+  profiles?: {
+    full_name: string | null;
+    phone: string | null;
   } | null;
-  addresses: {
+  addresses?: {
     address_line: string;
     city: string;
     state: string;
