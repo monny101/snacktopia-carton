@@ -258,29 +258,28 @@ const Products: React.FC = () => {
       )}
 
       {/* Search and filter bar */}
-      <div className="sticky top-16 z-20 -mx-4 px-4 py-3 bg-white/80 backdrop-blur-md border-b border-gray-200">
-        <div className="flex items-center gap-3 max-w-3xl mx-auto">
+      <div className="sticky top-16 z-20 -mx-4 px-4 py-2 bg-white/80 backdrop-blur-md border-b border-gray-200">
+        <div className="flex items-center gap-2 max-w-3xl mx-auto">
           {/* Search */}
           <div className="relative flex-1">
             <form onSubmit={handleSearchSubmit}>
               <div className="relative">
-                <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                <Search className="absolute left-3 top-2 h-4 w-4 text-gray-400" />
                 <Input
                   type="text"
                   placeholder="Search products..."
                   value={searchTerm}
                   onChange={handleSearchChange}
-                  className="pl-10 pr-9 h-10 bg-gray-50 border-gray-200 rounded-full focus:bg-white"
+                  className="pl-9 pr-8 h-9 bg-gray-50 border-gray-200 rounded-full focus:bg-white text-sm"
                   onFocus={() => setIsSearchFocused(true)}
                 />
                 {searchTerm && (
                   <button 
                     type="button" 
                     onClick={handleClearSearch}
-                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                    className="absolute right-2 top-2 text-gray-400 hover:text-gray-600"
                   >
-                    <X className="h-5 w-5" />
-                    <span className="sr-only">Clear search</span>
+                    <X className="h-4 w-4" />
                   </button>
                 )}
               </div>
@@ -288,20 +287,12 @@ const Products: React.FC = () => {
 
             {/* Search suggestions */}
             {isSearchFocused && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50">
+              <div className="absolute left-0 right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50">
                 <div className="p-2">
                   {searchTerm ? (
                     <>
-                      <div className="py-2 px-3 hover:bg-gray-50 rounded-md cursor-pointer flex items-center">
-                        <Search className="h-4 w-4 text-gray-400 mr-2" />
-                        <span>Search for "<strong>{searchTerm}</strong>"</span>
-                      </div>
-                      
-                      <div className="mt-2 border-t border-gray-100 pt-2">
-                        <div className="text-xs text-gray-500 px-3 py-1">Popular Searches</div>
-                        <div className="py-2 px-3 hover:bg-gray-50 rounded-md cursor-pointer">
-                          Groceries
-                        </div>
+                      <div className="text-xs text-gray-500 px-3 py-1">Popular Categories</div>
+                      <div>
                         <div className="py-2 px-3 hover:bg-gray-50 rounded-md cursor-pointer">
                           Electronics
                         </div>
@@ -319,7 +310,7 @@ const Products: React.FC = () => {
                 </div>
                 
                 <button 
-                  className="w-full bg-gray-50 text-center py-2 text-sm text-gray-600 hover:bg-gray-100 border-t border-gray-100"
+                  className="w-full bg-gray-50 text-center py-1.5 text-sm text-gray-600 hover:bg-gray-100 border-t border-gray-100"
                   onClick={() => setIsSearchFocused(false)}
                 >
                   Close
@@ -333,10 +324,10 @@ const Products: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
-              className="flex items-center gap-2"
+              className="flex items-center gap-1 h-9 px-3 text-sm"
               onClick={() => setShowSortDropdown(!showSortDropdown)}
             >
-              Sort By
+              Sort
               <ChevronDown className="h-4 w-4" />
             </Button>
             
@@ -372,21 +363,21 @@ const Products: React.FC = () => {
           {/* Filter Toggle */}
           <Button
             variant="outline"
-            size="icon"
+            size="sm"
             onClick={toggleFilters}
-            className={`h-10 w-10 rounded-full ${showFilters ? 'bg-blue-50 text-blue-600 border-blue-200' : ''}`}
+            className={`h-9 w-9 ${showFilters ? 'bg-blue-50 text-blue-600 border-blue-200' : ''}`}
           >
-            <Filter className="h-5 w-5" />
+            <Filter className="h-4 w-4" />
             <span className="sr-only">Toggle filters</span>
           </Button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6 mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-4 md:gap-6 mt-4">
         {/* Filters Sidebar */}
-        <div className={`${showFilters ? 'block' : 'hidden lg:block'}`}>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 lg:sticky lg:top-32">
+        <div className={`${showFilters ? 'block' : 'hidden lg:block'} lg:sticky lg:top-32`}>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
             <div className="flex items-center justify-between mb-4 lg:hidden">
               <h3 className="font-semibold">Filters</h3>
               <Button 
@@ -395,7 +386,7 @@ const Products: React.FC = () => {
                 onClick={toggleFilters}
                 className="h-8 w-8 p-0"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </Button>
             </div>
             

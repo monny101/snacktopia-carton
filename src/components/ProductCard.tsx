@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Eye, Heart, Star, ShieldCheck } from 'lucide-react';
+import { ShoppingCart, Eye, Heart, ShieldCheck } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { Badge } from '@/components/ui/badge';
 
@@ -32,9 +32,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     });
   };
 
-  // Randomize rating data for demo purposes
-  const rating = Math.floor(Math.random() * 10) / 2 + 3; // Random rating between 3 and 5
-  const reviews = Math.floor(Math.random() * 200) + 5; // Random number of reviews
+  // Calculate discount
   const discount = Math.floor(Math.random() * 30) + 10; // Random discount between 10-40%
   const originalPrice = Math.round(product.price * (100 / (100 - discount)));
 
@@ -94,29 +92,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           
           {/* Title */}
           <Link to={`/products/${product.id}`}>
-            <h3 className="text-sm font-medium mb-1 line-clamp-2 group-hover:text-blue-600 transition-colors">
+            <h3 className="text-sm font-medium mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
               {product.name}
             </h3>
           </Link>
-          
-          {/* Rating */}
-          <div className="flex items-center gap-1 mb-2">
-            <div className="flex items-center">
-              {[...Array(5)].map((_, i) => (
-                <Star 
-                  key={i} 
-                  className={`h-3.5 w-3.5 ${
-                    i < Math.floor(rating) 
-                      ? 'fill-yellow-400 text-yellow-400' 
-                      : i < rating 
-                        ? 'fill-yellow-400/50 text-yellow-400' 
-                        : 'fill-gray-200 text-gray-200'
-                  }`}
-                />
-              ))}
-            </div>
-            <span className="text-xs text-gray-500">({reviews})</span>
-          </div>
 
           {/* Pricing */}
           <div className="mb-3">

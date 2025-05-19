@@ -28,11 +28,11 @@ const ProductGrid: React.FC<ProductGridProps> = ({
 }) => {
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
         {[...Array(8)].map((_, i) => (
-          <div key={i} className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
+          <div key={i} className="bg-white border border-gray-100 rounded-lg shadow-sm overflow-hidden">
             <div className="aspect-square bg-gray-50 animate-pulse" />
-            <div className="p-4">
+            <div className="p-3 md:p-4">
               <div className="h-4 bg-gray-100 rounded w-3/4 mb-2 animate-pulse" />
               <div className="h-4 bg-gray-100 rounded w-1/2 mb-4 animate-pulse" />
               <div className="h-8 bg-gray-100 rounded animate-pulse" />
@@ -45,11 +45,11 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   
   if (filteredProducts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-96 text-center bg-white rounded-xl border border-gray-100 shadow-sm p-8">
+      <div className="flex flex-col items-center justify-center h-[50vh] text-center bg-white rounded-xl border border-gray-100 shadow-sm p-4 md:p-8">
         <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
           <Package className="h-8 w-8 text-gray-400" />
         </div>
-        <h2 className="text-xl font-medium text-gray-700 mb-2">No products found</h2>
+        <h2 className="text-lg md:text-xl font-medium text-gray-700 mb-2">No products found</h2>
         <p className="text-gray-500 max-w-md mb-6">
           We couldn't find any products matching your criteria. Try adjusting your filters or search term.
         </p>
@@ -62,7 +62,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   }
   
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
       {filteredProducts.map(product => (
         <ProductCard 
           key={product.id} 
