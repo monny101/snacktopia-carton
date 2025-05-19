@@ -67,7 +67,7 @@ const Products: React.FC = () => {
           .select('*')
           .order('name');
         
-        if (subcategoriesError) throw subcategoryError;
+        if (subcategoriesError) throw subcategoriesError; // Fixed: Changed subcategoryError to subcategoriesError
         setSubcategories(subcategoriesData || []);
         
         // If URL has category/subcategory params, set them as selected
