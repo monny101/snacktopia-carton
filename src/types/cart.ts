@@ -1,3 +1,4 @@
+
 /**
  * Cart types for the application
  */
@@ -25,5 +26,4 @@ export interface CartContextType {
   getItemCount: () => number;
   getTotalCost: () => number;
   subtotal: number;
-  getTotalCost: () => number;
 }
