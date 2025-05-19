@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Outlet, ScrollRestoration } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import Footer from './Footer';
 import Navbar from './Navbar';
 import CustomerChat from './CustomerChat';
@@ -14,7 +14,6 @@ const Layout = () => {
       </main>
       <Footer />
       <CustomerChat />
-      <ScrollRestoration />
     </div>
   );
 };
