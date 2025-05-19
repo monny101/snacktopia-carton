@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -85,6 +84,7 @@ const AdminOrders: React.FC = () => {
     const fetchOrders = async () => {
       try {
         setLoading(true);
+        console.log("Fetching orders from Supabase...");
         
         const { data, error } = await supabase
           .from('orders')
@@ -95,13 +95,22 @@ const AdminOrders: React.FC = () => {
           `)
           .order(sortField, { ascending: sortDirection === 'asc' });
         
-        if (error) throw error;
-        setOrders(data as unknown as Order[]);
+        if (error) {
+          console.error('Error fetching orders:', error);
+          throw error;
+        }
+        
+        console.log("Orders fetched:", data);
+        if (data) {
+          setOrders(data as unknown as Order[]);
+        } else {
+          setOrders([]);
+        }
       } catch (error) {
         console.error('Error fetching orders:', error);
         toast({
           title: 'Error',
-          description: 'Failed to load orders',
+          description: 'Failed to load orders. Please check the console for details.',
           variant: 'destructive',
         });
       } finally {
@@ -148,6 +157,7 @@ const AdminOrders: React.FC = () => {
     
     try {
       setLoadingOrderItems(true);
+      console.log("Fetching order items for order:", order.id);
       
       const { data, error } = await supabase
         .from('order_items')
@@ -157,13 +167,22 @@ const AdminOrders: React.FC = () => {
         `)
         .eq('order_id', order.id);
       
-      if (error) throw error;
-      setOrderItems(data as unknown as OrderItem[]);
+      if (error) {
+        console.error('Error fetching order items:', error);
+        throw error;
+      }
+      
+      console.log("Order items fetched:", data);
+      if (data) {
+        setOrderItems(data as unknown as OrderItem[]);
+      } else {
+        setOrderItems([]);
+      }
     } catch (error) {
       console.error('Error fetching order items:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load order details',
+        description: 'Failed to load order details. Please check the console for details.',
         variant: 'destructive',
       });
     } finally {

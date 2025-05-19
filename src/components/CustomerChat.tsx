@@ -34,6 +34,8 @@ const CustomerChat: React.FC = () => {
   // Set up real-time subscription
   useEffect(() => {
     if (!isAuthenticated || !user) return;
+    
+    console.log("Setting up chat subscription for user:", user.id);
 
     const chatSubscription = supabase
       .channel('public:chat_messages')
@@ -45,6 +47,7 @@ const CustomerChat: React.FC = () => {
           filter: `user_id=eq.${user.id}` 
         }, 
         (payload) => {
+          console.log("New chat message received:", payload);
           const newMessage = payload.new as ChatMessage;
           
           // If chat is open, add message to chat and mark as read
@@ -70,6 +73,7 @@ const CustomerChat: React.FC = () => {
     fetchUnreadCount();
     
     return () => {
+      console.log("Removing chat subscription");
       supabase.removeChannel(chatSubscription);
     };
   }, [isAuthenticated, user, isOpen]);
@@ -88,6 +92,7 @@ const CustomerChat: React.FC = () => {
     
     try {
       setLoading(true);
+      console.log("Fetching chat messages for user:", user.id);
       
       const { data, error } = await supabase
         .from('chat_messages')
@@ -98,10 +103,17 @@ const CustomerChat: React.FC = () => {
         .or(`user_id.eq.${user.id},staff_id.eq.${user.id}`)
         .order('created_at', { ascending: true });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching messages:', error);
+        throw error;
+      }
       
-      // Cast as any first to avoid TypeScript errors with the profiles join
-      setMessages((data as any) || []);
+      console.log("Chat messages fetched:", data);
+      if (data) {
+        setMessages(data as any);
+      } else {
+        setMessages([]);
+      }
       
       // Reset unread count and mark messages as read
       setUnreadCount(0);
@@ -111,7 +123,7 @@ const CustomerChat: React.FC = () => {
       console.error('Error fetching messages:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load chat history',
+        description: 'Failed to load chat history. Please try again later.',
         variant: 'destructive',
       });
     } finally {
@@ -180,6 +192,8 @@ const CustomerChat: React.FC = () => {
     if (!message.trim() || !user) return;
     
     try {
+      console.log("Sending chat message for user:", user.id);
+      
       const messageData = {
         user_id: user.id,
         staff_id: null,
@@ -192,17 +206,24 @@ const CustomerChat: React.FC = () => {
         .insert([messageData as any])
         .select();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error sending message:', error);
+        throw error;
+      }
+      
+      console.log("Chat message sent:", data);
       
       // Add message to state
-      setMessages(prev => [...prev, data[0] as ChatMessage]);
-      scrollToBottom();
+      if (data && data[0]) {
+        setMessages(prev => [...prev, data[0] as ChatMessage]);
+        scrollToBottom();
+      }
       
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
         title: 'Error',
-        description: 'Failed to send message',
+        description: 'Failed to send message. Please try again.',
         variant: 'destructive',
       });
     }
