@@ -9,6 +9,7 @@ const defaultContext: CartContextType = {
   clearCart: () => {},
   updateQuantity: () => {},
   getItemCount: () => 0,
+  getTotalCost: () => 0,
   subtotal: 0
 };
 
@@ -95,9 +96,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return items.reduce((count, item) => count + item.quantity, 0);
   };
 
+<<<<<<< HEAD
   // Get total cost (can include delivery, taxes, etc. in future)
   const getTotalCost = () => {
     return subtotal;
+=======
+  // Get total cost of items in cart
+  const getTotalCost = () => {
+    return items.reduce((total, item) => total + (item.price * item.quantity), 0);
+>>>>>>> a86d1912973188ff65d8eec9eb0619ab31dbd430
   };
 
   return (
@@ -108,8 +115,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clearCart, 
       updateQuantity, 
       getItemCount,
+<<<<<<< HEAD
       subtotal,
       getTotalCost // add to context value
+=======
+      getTotalCost,
+      subtotal
+>>>>>>> a86d1912973188ff65d8eec9eb0619ab31dbd430
     }}>
       {children}
     </CartContext.Provider>

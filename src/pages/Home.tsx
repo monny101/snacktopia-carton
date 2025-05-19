@@ -1,176 +1,94 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, TrendingUp, Truck, ThumbsUp } from 'lucide-react';
-import PromoMarquee from '@/components/PromoMarquee';
+import { ArrowRight } from 'lucide-react';
+import HeroCarousel from '@/components/HeroCarousel';
 import FeaturedProducts from '@/components/FeaturedProducts';
 import Categories from '@/components/Categories';
-import { useAuth } from '@/contexts/auth/AuthContext';
-import { ensureUserIsAdmin, updateUserMetadataRole } from '@/utils/adminHelpers';
-import { toast } from '@/hooks/use-toast';
-
+import PromoMarquee from '@/components/PromoMarquee';
 const Home: React.FC = () => {
-  const { user, profile } = useAuth();
-  
-  useEffect(() => {
-    // Check if we need to ensure admin access (only do this once)
-    const checkAdminStatus = async () => {
-      if (user && (!profile || profile.role !== 'admin')) {
-        const localStorageKey = `admin-setup-${user.id}`;
-        const adminSetupDone = localStorage.getItem(localStorageKey);
-        
-        if (!adminSetupDone) {
-          console.log("Running admin setup for user:", user.id);
-          
-          const isAdmin = await ensureUserIsAdmin(user.id);
-          if (isAdmin) {
-            await updateUserMetadataRole(user.id);
-            localStorage.setItem(localStorageKey, 'true');
-            
-            toast({
-              title: "Admin Setup Complete",
-              description: "You now have admin privileges. Please refresh the page.",
-              duration: 5000,
-            });
-            
-            // Wait a moment and then reload
-            setTimeout(() => {
-              window.location.reload();
-            }, 2000);
-          }
-        }
-      }
-    };
-    
-    checkAdminStatus();
-  }, [user, profile]);
-
-  return <div className="flex flex-col min-h-screen">
-      {/* Promotional Marquee */}
-      <PromoMarquee />
-
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-blue-800 via-mondoBlue to-blue-600 py-20 md:py-[100px]">
-        {/* Decorative elements */}
-        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-blue-400/20 blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-blue-400/10 blur-3xl" />
-        
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            <div className="text-white">
-              <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-                Buy in Bulk, <span className="text-mondoYellow">Save More!</span>
+  return <div className="min-h-screen bg-white">
+      {/* Hero Section with Carousel */}
+      <section className="py-10 md:py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            <div className="order-2 lg:order-1">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+                Quality Cartons and Packaging Solutions
               </h1>
-              <p className="text-lg md:text-xl mb-8 text-blue-50/90 max-w-lg">
-                Explore our wide range of snacks, soaps, detergents, and food ingredients 
-                at wholesale prices with convenient home delivery.
+              <p className="text-lg text-gray-600 mb-6">
+                Mondo Carton King provides top-quality packaging materials for businesses of all sizes.
+                From cardboard boxes to specialized packaging, we've got you covered.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link to="/products">
-                  <Button size="lg" className="bg-mondoYellow hover:bg-yellow-500 text-mondoBlue font-bold shadow-lg transition-all hover:shadow-xl">
-                    <ShoppingBag className="mr-2" size={20} />
+                <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+                  <Link to="/products" className="flex items-center">
                     Shop Now
-                  </Button>
-                </Link>
-                <Link to="/register">
-                  <Button size="lg" variant="outline" className="text-white border-white/30 bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all">
-                    Create Account
-                  </Button>
-                </Link>
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline">
+                  <Link to="/register">Create Account</Link>
+                </Button>
               </div>
             </div>
-            <div className="hidden md:block">
-              <div className="relative rounded-lg overflow-hidden shadow-2xl border border-white/10">
-                <img src="https://images.unsplash.com/photo-1604719312566-8912e9227c6a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Assorted products" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-blue-900/60 to-transparent"></div>
-              </div>
+            <div className="order-1 lg:order-2">
+              <HeroCarousel />
             </div>
           </div>
         </div>
-
-        {/* Wave decoration */}
-        <div className="absolute bottom-0 left-0 w-full overflow-hidden">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none" className="w-full h-12 md:h-24">
-            <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" fill="#ffffff" opacity="0.2"></path>
-            <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" fill="#ffffff" opacity="0.2"></path>
-            <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" fill="#ffffff" opacity="0.2"></path>
-          </svg>
-        </div>
       </section>
 
-      {/* Categories Section */}
-      <section className="py-16 bg-gray-50">
+      {/* Featured Categories */}
+      <section className="py-10 bg-gray-50">
         <div className="container mx-auto px-4">
+          
           <Categories />
-        </div>
-      </section>
-
-      {/* Featured Products Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-4">Featured Products</h2>
-          <p className="text-gray-600 text-center mb-12 max-w-2xl mx-auto">Discover our most popular items at unbeatable bulk prices</p>
-          <FeaturedProducts />
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-16 bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12 text-gray-800">Why Choose Us</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 text-center transform transition-transform hover:scale-105 hover:shadow-lg">
-              <div className="inline-flex items-center justify-center w-16 h-16 mb-6 bg-mondoBlue/10 rounded-full">
-                <ShoppingBag className="w-8 h-8 text-mondoBlue" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Bulk Pricing</h3>
-              <p className="text-gray-600">Get the best prices when you buy in bulk for your business or home.</p>
-            </div>
-            
-            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 text-center transform transition-transform hover:scale-105 hover:shadow-lg">
-              <div className="inline-flex items-center justify-center w-16 h-16 mb-6 bg-mondoBlue/10 rounded-full">
-                <TrendingUp className="w-8 h-8 text-mondoBlue" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Quality Products</h3>
-              <p className="text-gray-600">We source the highest quality products for your satisfaction.</p>
-            </div>
-            
-            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 text-center transform transition-transform hover:scale-105 hover:shadow-lg">
-              <div className="inline-flex items-center justify-center w-16 h-16 mb-6 bg-mondoBlue/10 rounded-full">
-                <Truck className="w-8 h-8 text-mondoBlue" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Fast Delivery</h3>
-              <p className="text-gray-600">Enjoy convenient home delivery or pickup options for your orders.</p>
-            </div>
-            
-            <div className="bg-white p-6 shadow-md border border-gray-100 text-center transform transition-transform hover:scale-105 hover:shadow-lg px-[24px] my-0 mx-0 rounded-xl">
-              <div className="inline-flex items-center justify-center w-16 h-16 mb-6 bg-mondoBlue/10 rounded-full">
-                <ThumbsUp className="w-8 h-8 text-mondoBlue" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Customer Satisfaction</h3>
-              <p className="text-gray-600">We prioritize your satisfaction with every purchase.</p>
-            </div>
+          <div className="text-center mt-8">
+            <Link to="/products">
+              <Button variant="outline">
+                View All Categories
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
 
-     
-      {/* CTA Section */}
-      <section className="bg-gradient-to-br from-mondoYellow to-yellow-400 py-[6px]">
+      {/* Promo Banner */}
+      <section className="py-4 bg-blue-600 text-white overflow-hidden">
+        <PromoMarquee />
+      </section>
+
+      {/* Featured Products */}
+      <section className="py-10">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">Featured Products</h2>
+          <FeaturedProducts />
+          <div className="text-center mt-8">
+            <Link to="/products">
+              <Button>
+                Browse All Products
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Call to Action */}
+      <section className="py-12 bg-gray-50">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4 text-mondoBlue">Ready to Start Saving?</h2>
-          <p className="text-lg mb-8 text-gray-800 max-w-2xl mx-auto">
-            Join thousands of satisfied customers who save money by buying in bulk from Mondo Carton King.
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">Ready to Get Started?</h2>
+          <p className="text-lg text-gray-600 mb-6 max-w-2xl mx-auto">
+            Join thousands of businesses that trust Mondo Carton King for their packaging needs.
+            Register now and get access to wholesale pricing and exclusive deals.
           </p>
-          <Link to="/products">
-            <Button size="lg" className="bg-mondoBlue hover:bg-blue-700 text-white font-bold shadow-lg transition-all hover:shadow-xl px-8">
-              <ShoppingBag className="mr-2" size={20} />
-              Shop Now
-            </Button>
-          </Link>
+          <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+            <Link to="/register">Create an Account</Link>
+          </Button>
         </div>
       </section>
     </div>;
 };
-
 export default Home;

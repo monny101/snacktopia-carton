@@ -23,6 +23,7 @@ export interface CartContextType {
   clearCart: () => void;
   updateQuantity: (id: string, quantity: number) => void;
   getItemCount: () => number;
+  getTotalCost: () => number;
   subtotal: number;
   getTotalCost: () => number;
 }

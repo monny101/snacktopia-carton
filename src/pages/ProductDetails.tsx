@@ -6,6 +6,7 @@ import { ShoppingCart, ChevronLeft, Plus, Minus, Loader2 } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import WishlistButton from '@/components/WishlistButton';
 
 interface Product {
   id: string;
@@ -239,7 +240,10 @@ const ProductDetails: React.FC = () => {
 
           {/* Product Info */}
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4">{product.name}</h1>
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{product.name}</h1>
+              <WishlistButton productId={product.id} />
+            </div>
             
             <div className="flex items-center mb-6">
               <span className="text-2xl font-bold text-blue-500">₦{product.price.toLocaleString()}</span>
