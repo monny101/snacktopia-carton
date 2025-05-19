@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,12 +9,22 @@ import ProductFilter from '@/components/ProductFilter';
 interface Category {
   id: string;
   name: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+  last_updated_at: string;
+  last_updated_by?: string;
 }
 
 interface Subcategory {
   id: string;
   name: string;
   category_id: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+  last_updated_at: string;
+  last_updated_by?: string;
 }
 
 interface Product {
@@ -56,7 +67,7 @@ const Products: React.FC = () => {
           .select('*')
           .order('name');
         
-        if (subcategoriesError) throw subcategoriesError;
+        if (subcategoriesError) throw subcategoryError;
         setSubcategories(subcategoriesData || []);
         
         // If URL has category/subcategory params, set them as selected
@@ -186,7 +197,14 @@ const Products: React.FC = () => {
 
   return (
     <div className="container mx-auto py-6 px-4">
-      <ProductHeader count={filteredProducts.length} />
+      <ProductHeader 
+        filteredProducts={filteredProducts}
+        totalProducts={filteredProducts.length}
+        selectedCategory={selectedCategory}
+        selectedSubcategory={selectedSubcategory}
+        getCategoryName={getCategoryName}
+        getSubcategoryName={getSubcategoryName}
+      />
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-6">
         <div className="lg:col-span-1">
