@@ -209,10 +209,10 @@ const AuditLogs: React.FC = () => {
               <SelectValue placeholder="Filter by action" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All actions</SelectItem>
+              <SelectItem value="_all">All actions</SelectItem>
               {[...new Set(logs.map(log => log.action_type))].map(action => (
-                <SelectItem key={action} value={action}>
-                  {action}
+                <SelectItem key={action} value={action || "unknown"}>
+                  {action || "Unknown action"}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -225,10 +225,10 @@ const AuditLogs: React.FC = () => {
               <SelectValue placeholder="Filter by table" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All tables</SelectItem>
+              <SelectItem value="_all">All tables</SelectItem>
               {[...new Set(logs.map(log => log.table_name))].map(table => (
-                <SelectItem key={table} value={table}>
-                  {table}
+                <SelectItem key={table} value={table || "unknown"}>
+                  {table || "Unknown table"}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -292,19 +292,7 @@ const AuditLogs: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {logs.filter(log => {
-                  const searchableValues = [
-                    log.action_type,
-                    log.table_name,
-                    log.record_id,
-                    JSON.stringify(log.old_values),
-                    JSON.stringify(log.new_values),
-                    log.user_id,
-                    userEmails[log.user_id] || '',
-                  ].join(' ').toLowerCase();
-                  
-                  return searchableValues.includes(searchTerm.toLowerCase());
-                }).map((log) => (
+                {filteredLogs.map((log) => (
                   <TableRow key={log.id}>
                     <TableCell className="font-mono text-xs">
                       {formatDate(log.created_at)}
