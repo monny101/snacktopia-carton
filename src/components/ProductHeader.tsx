@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle } from 'lucide-react';
@@ -15,6 +16,7 @@ interface ProductHeaderProps {
   searchTerm?: string;
   categoryName?: string;
   subcategoryName?: string;
+  count?: number; // Added this property to fix the type error
 }
 
 const ProductHeader: React.FC<ProductHeaderProps> = ({ 
@@ -29,7 +31,8 @@ const ProductHeader: React.FC<ProductHeaderProps> = ({
   totalProducts,
   searchTerm,
   categoryName,
-  subcategoryName
+  subcategoryName,
+  count // Added to handle the count prop
 }) => {
   return (
     <div className="flex flex-col gap-3">
@@ -48,7 +51,9 @@ const ProductHeader: React.FC<ProductHeaderProps> = ({
                 ? 'No products found' 
                 : totalProducts !== undefined
                   ? `${totalProducts.toLocaleString()} products`
-                  : `${filteredProducts.length.toLocaleString()} products`}
+                  : count !== undefined
+                    ? `${count.toLocaleString()} products`
+                    : `${filteredProducts.length.toLocaleString()} products`}
           </p>
         </div>
 

@@ -1,9 +1,10 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { User, MapPin, ClipboardList, Settings, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface Address {
   id: string;
@@ -17,13 +18,21 @@ interface Address {
 
 interface Order {
   id: string;
-  orderNumber: string;
-  date: string;
-  status: 'processing' | 'delivered' | 'cancelled';
-  total: number;
+  created_at: string;
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  total_amount: number;
+  profiles?: {
+    full_name: string | null;
+    phone: string | null;
+  } | null;
+  addresses?: {
+    address_line: string;
+    city: string;
+    state: string;
+  } | null;
 }
 
-// Mock data
+// Mock data for addresses since we're only focusing on orders
 const addresses: Address[] = [
   {
     id: '1',
@@ -45,30 +54,6 @@ const addresses: Address[] = [
   }
 ];
 
-const orders: Order[] = [
-  {
-    id: '1',
-    orderNumber: 'MCK123456',
-    date: '2023-06-10',
-    status: 'delivered',
-    total: 25000
-  },
-  {
-    id: '2',
-    orderNumber: 'MCK789012',
-    date: '2023-06-15',
-    status: 'processing',
-    total: 18500
-  },
-  {
-    id: '3',
-    orderNumber: 'MCK345678',
-    date: '2023-06-20',
-    status: 'cancelled',
-    total: 9000
-  }
-];
-
 const Profile: React.FC = () => {
   const { user, isAuthenticated, logout, profile } = useAuth();
   
@@ -79,6 +64,8 @@ const Profile: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'profile' | 'addresses' | 'orders'>('profile');
   const [updating, setUpdating] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
   
   // Profile form state
   const [profileForm, setProfileForm] = useState({
@@ -86,6 +73,46 @@ const Profile: React.FC = () => {
     email: user?.email || '',
     phone: profile?.phone || '+234 123 4567 890'
   });
+
+  // Fetch user's orders from database
+  useEffect(() => {
+    if (user && activeTab === 'orders') {
+      const fetchOrders = async () => {
+        setLoadingOrders(true);
+        try {
+          const { data, error } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+          
+          if (error) {
+            throw error;
+          }
+          
+          if (data) {
+            // Convert the status string to the correct enum type
+            const typedOrders: Order[] = data.map(order => ({
+              ...order,
+              status: order.status as 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
+            }));
+            setOrders(typedOrders);
+          }
+        } catch (error) {
+          console.error('Error fetching orders:', error);
+          toast({
+            title: 'Error',
+            description: 'Failed to load your orders. Please try again later.',
+            variant: 'destructive',
+          });
+        } finally {
+          setLoadingOrders(false);
+        }
+      };
+      
+      fetchOrders();
+    }
+  }, [user, activeTab]);
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -101,6 +128,15 @@ const Profile: React.FC = () => {
       setUpdating(false);
       // In a real app, this would update the user context
     }, 1000);
+  };
+
+  // Format date
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'numeric', 
+      year: 'numeric'
+    });
   };
 
   // Render different tabs
@@ -248,7 +284,12 @@ const Profile: React.FC = () => {
           <div>
             <h2 className="text-xl font-semibold mb-4">Your Orders</h2>
             
-            {orders.length === 0 ? (
+            {loadingOrders ? (
+              <div className="text-center py-8">
+                <Loader2 className="h-12 w-12 text-mondoBlue mx-auto mb-4 animate-spin" />
+                <p className="text-gray-500">Loading your orders...</p>
+              </div>
+            ) : orders.length === 0 ? (
               <div className="text-center py-8">
                 <ClipboardList className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500">You haven't placed any orders yet.</p>
@@ -279,11 +320,11 @@ const Profile: React.FC = () => {
                     {orders.map(order => (
                       <tr key={order.id}>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{order.orderNumber}</div>
+                          <div className="text-sm font-medium text-gray-900">{order.id.substring(0, 8)}...</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-500">
-                            {new Date(order.date).toLocaleDateString()}
+                            {formatDate(order.created_at)}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -292,16 +333,28 @@ const Profile: React.FC = () => {
                               ? 'bg-green-100 text-green-800' 
                               : order.status === 'processing'
                                 ? 'bg-blue-100 text-blue-800'
-                                : 'bg-red-100 text-red-800'
+                                : order.status === 'shipped'
+                                  ? 'bg-purple-100 text-purple-800'
+                                  : order.status === 'cancelled'
+                                    ? 'bg-red-100 text-red-800'
+                                    : 'bg-yellow-100 text-yellow-800'
                           }`}>
                             {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">₦{order.total.toLocaleString()}</div>
+                          <div className="text-sm font-medium text-gray-900">₦{order.total_amount.toLocaleString()}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                          <a href="#" className="text-mondoBlue hover:underline">View Details</a>
+                          <button 
+                            className="text-mondoBlue hover:underline"
+                            onClick={() => {
+                              // Here we would normally navigate to the order details page
+                              console.log(`View details for order ${order.id}`);
+                            }}
+                          >
+                            View Details
+                          </button>
                         </td>
                       </tr>
                     ))}

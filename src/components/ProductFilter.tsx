@@ -1,28 +1,48 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Filter, X, Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import type { Database } from '@/integrations/supabase/types';
 
-type Category = Database['public']['Tables']['categories']['Row'];
-type Subcategory = Database['public']['Tables']['subcategories']['Row'];
+interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+  last_updated_at: string;
+  last_updated_by?: string;
+}
+
+interface Subcategory {
+  id: string;
+  name: string;
+  category_id: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+  last_updated_at: string;
+  last_updated_by?: string;
+}
 
 interface ProductFilterProps {
   categories: Category[];
   subcategories: Subcategory[];
   selectedCategory: string | null;
   selectedSubcategory: string | null;
-  searchTerm: string;
-  sortBy: 'default' | 'priceAsc' | 'priceDesc';
-  showFilters: boolean;
-  categorySubcategories: Subcategory[];
-  setShowFilters: (show: boolean) => void;
-  setSearchTerm: (term: string) => void;
-  setSortBy: (sort: 'default' | 'priceAsc' | 'priceDesc') => void;
-  setSelectedCategory: (id: string | null) => void;
-  setSelectedSubcategory: (id: string | null) => void;
-  resetFilters: () => void;
+  priceRange: [number, number];
+  setPriceRange: (range: [number, number]) => void;
+  onCategoryChange: (categoryId: string | null) => void;
+  onSubcategoryChange: (subcategoryId: string | null) => void;
+  searchTerm?: string;
+  sortBy?: 'default' | 'priceAsc' | 'priceDesc';
+  showFilters?: boolean;
+  categorySubcategories?: Subcategory[];
+  setShowFilters?: (show: boolean) => void;
+  setSearchTerm?: (term: string) => void;
+  setSortBy?: (sort: 'default' | 'priceAsc' | 'priceDesc') => void;
+  resetFilters?: () => void;
 }
 
 const ProductFilter: React.FC<ProductFilterProps> = ({
@@ -30,17 +50,24 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
   subcategories,
   selectedCategory,
   selectedSubcategory,
-  searchTerm,
-  sortBy,
-  showFilters,
-  categorySubcategories,
-  setShowFilters,
-  setSearchTerm,
-  setSortBy,
-  setSelectedCategory,
-  setSelectedSubcategory,
-  resetFilters
+  priceRange,
+  setPriceRange,
+  onCategoryChange,
+  onSubcategoryChange,
+  searchTerm = '',
+  sortBy = 'default',
+  showFilters = true,
+  categorySubcategories = [],
+  setShowFilters = () => {},
+  setSearchTerm = () => {},
+  setSortBy = () => {},
+  resetFilters = () => {}
 }) => {
+  // Determine subcategories for the selected category
+  const filteredSubcategories = selectedCategory 
+    ? subcategories.filter(s => s.category_id === selectedCategory) 
+    : categorySubcategories;
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-100">
       {/* Mobile Filter Header */}
@@ -91,11 +118,9 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
               key={category.id}
               onClick={() => {
                 if (selectedCategory === category.id) {
-                  setSelectedCategory(null);
-                  setSelectedSubcategory(null);
+                  onCategoryChange(null);
                 } else {
-                  setSelectedCategory(category.id);
-                  setSelectedSubcategory(null);
+                  onCategoryChange(category.id);
                 }
               }}
               className={`flex items-center justify-between w-full px-2 py-1.5 text-sm rounded-md ${
@@ -111,18 +136,18 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
         </div>
       </div>
 
-      {selectedCategory && categorySubcategories.length > 0 && (
+      {selectedCategory && filteredSubcategories.length > 0 && (
         <div className="p-4">
           <h3 className="text-sm font-medium text-gray-900 mb-4">Subcategories</h3>
           <div className="space-y-2">
-            {categorySubcategories.map((subcategory) => (
+            {filteredSubcategories.map((subcategory) => (
               <button
                 key={subcategory.id}
                 onClick={() => {
                   if (selectedSubcategory === subcategory.id) {
-                    setSelectedSubcategory(null);
+                    onSubcategoryChange(null);
                   } else {
-                    setSelectedSubcategory(subcategory.id);
+                    onSubcategoryChange(subcategory.id);
                   }
                 }}
                 className={`flex items-center justify-between w-full px-2 py-1.5 text-sm rounded-md ${

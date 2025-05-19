@@ -33,6 +33,8 @@ const CustomerChat: React.FC = () => {
   // Set up real-time subscription
   useEffect(() => {
     if (!isAuthenticated || !user) return;
+    
+    console.log("Setting up chat subscription for user:", user.id);
 
     const chatSubscription = supabase
       .channel('public:chat_messages')
@@ -44,6 +46,7 @@ const CustomerChat: React.FC = () => {
           filter: `user_id=eq.${user.id}` 
         }, 
         (payload) => {
+          console.log("New chat message received:", payload);
           const newMessage = payload.new as ChatMessage;
           
           // If chat is open, add message to chat and mark as read
@@ -69,6 +72,7 @@ const CustomerChat: React.FC = () => {
     fetchUnreadCount();
     
     return () => {
+      console.log("Removing chat subscription");
       supabase.removeChannel(chatSubscription);
     };
   }, [isAuthenticated, user, isOpen]);
@@ -187,6 +191,8 @@ const CustomerChat: React.FC = () => {
     if (!message.trim() || !user) return;
     
     try {
+      console.log("Sending chat message for user:", user.id);
+      
       const messageData = {
         user_id: user.id,
         staff_id: null,
@@ -199,17 +205,24 @@ const CustomerChat: React.FC = () => {
         .insert([messageData as any])
         .select();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error sending message:', error);
+        throw error;
+      }
+      
+      console.log("Chat message sent:", data);
       
       // Add message to state
-      setMessages(prev => [...prev, data[0] as ChatMessage]);
-      scrollToBottom();
+      if (data && data[0]) {
+        setMessages(prev => [...prev, data[0] as ChatMessage]);
+        scrollToBottom();
+      }
       
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
         title: 'Error',
-        description: 'Failed to send message',
+        description: 'Failed to send message. Please try again.',
         variant: 'destructive',
       });
     }

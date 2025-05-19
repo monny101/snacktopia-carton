@@ -84,23 +84,38 @@ const AdminOrders: React.FC = () => {
     const fetchOrders = async () => {
       try {
         setLoading(true);
+        console.log("Fetching orders from Supabase...");
         
         const { data, error } = await supabase
           .from('orders')
           .select(`
             *,
-            profiles:user_id(full_name, phone),
-            addresses:address_id(address_line, city, state)
+            profiles (full_name, phone),
+            addresses (address_line, city, state)
           `)
           .order(sortField, { ascending: sortDirection === 'asc' });
         
-        if (error) throw error;
-        setOrders(data as unknown as Order[]);
+        if (error) {
+          console.error('Error fetching orders:', error);
+          throw error;
+        }
+        
+        console.log("Orders fetched:", data);
+        if (data) {
+          // Convert the status string to the correct enum type
+          const typedOrders: Order[] = data.map(order => ({
+            ...order,
+            status: order.status as 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
+          }));
+          setOrders(typedOrders);
+        } else {
+          setOrders([]);
+        }
       } catch (error) {
         console.error('Error fetching orders:', error);
         toast({
           title: 'Error',
-          description: 'Failed to load orders',
+          description: 'Failed to load orders. Please check the console for details.',
           variant: 'destructive',
         });
       } finally {
@@ -135,7 +150,7 @@ const AdminOrders: React.FC = () => {
   // Filter orders based on search term
   const filteredOrders = orders.filter(order => {
     const orderIdMatch = order.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const customerNameMatch = order.profiles?.full_name.toLowerCase().includes(searchTerm.toLowerCase());
+    const customerNameMatch = order.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase());
     
     return orderIdMatch || (customerNameMatch || false);
   });
@@ -147,6 +162,7 @@ const AdminOrders: React.FC = () => {
     
     try {
       setLoadingOrderItems(true);
+      console.log("Fetching order items for order:", order.id);
       
       const { data, error } = await supabase
         .from('order_items')
@@ -156,13 +172,22 @@ const AdminOrders: React.FC = () => {
         `)
         .eq('order_id', order.id);
       
-      if (error) throw error;
-      setOrderItems(data as unknown as OrderItem[]);
+      if (error) {
+        console.error('Error fetching order items:', error);
+        throw error;
+      }
+      
+      console.log("Order items fetched:", data);
+      if (data) {
+        setOrderItems(data as unknown as OrderItem[]);
+      } else {
+        setOrderItems([]);
+      }
     } catch (error) {
       console.error('Error fetching order items:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load order details',
+        description: 'Failed to load order details. Please check the console for details.',
         variant: 'destructive',
       });
     } finally {
@@ -175,18 +200,29 @@ const AdminOrders: React.FC = () => {
     try {
       const { error } = await supabase
         .from('orders')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .update({ 
+          status: newStatus, 
+          updated_at: new Date().toISOString() 
+        })
         .eq('id', orderId);
       
       if (error) throw error;
       
       // Update local state
       setOrders(orders.map(o => 
-        o.id === orderId ? { ...o, status: newStatus as Order['status'], updated_at: new Date().toISOString() } : o
+        o.id === orderId ? { 
+          ...o, 
+          status: newStatus as Order['status'], 
+          updated_at: new Date().toISOString() 
+        } : o
       ));
       
       if (selectedOrder && selectedOrder.id === orderId) {
-        setSelectedOrder({ ...selectedOrder, status: newStatus as Order['status'], updated_at: new Date().toISOString() });
+        setSelectedOrder({ 
+          ...selectedOrder, 
+          status: newStatus as Order['status'], 
+          updated_at: new Date().toISOString() 
+        });
       }
       
       toast({

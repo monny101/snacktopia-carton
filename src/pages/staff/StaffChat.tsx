@@ -9,8 +9,25 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import type { Database } from '@/integrations/supabase/types';
 import AdminChatMessage from '@/components/admin/chat/AdminChatMessage';
 
+<<<<<<< HEAD
 type ChatMessage = Database['public']['Tables']['chat_messages']['Row'] & {
   user?: {
+=======
+import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/auth/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import { Loader2, Send } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import type { Database } from '@/integrations/supabase/types';
+import AdminChatMessage from '@/components/admin/chat/AdminChatMessage';
+
+type ChatMessage = Database['public']['Tables']['chat_messages']['Row'] & {
+  profiles?: {
+>>>>>>> 4974272baafc74e145948f44f7ec8b4349f194f0
     full_name: string;
   };
 };
@@ -49,7 +66,11 @@ const StaffChat: React.FC = () => {
             message,
             created_at,
             is_read,
+<<<<<<< HEAD
             user:profiles!chat_messages_user_id_fkey(full_name)
+=======
+            profiles:user_id(full_name)
+>>>>>>> 4974272baafc74e145948f44f7ec8b4349f194f0
           `)
           .order('created_at', { ascending: false });
         
@@ -62,7 +83,11 @@ const StaffChat: React.FC = () => {
           if (!usersMap.has(msg.user_id)) {
             usersMap.set(msg.user_id, {
               id: msg.user_id,
+<<<<<<< HEAD
               full_name: msg.user?.full_name || 'Unknown User',
+=======
+              full_name: msg.profiles?.full_name || 'Unknown User',
+>>>>>>> 4974272baafc74e145948f44f7ec8b4349f194f0
               unread: msg.is_read ? 0 : 1,
               latest_message: msg.message,
               latest_message_time: msg.created_at
@@ -191,7 +216,11 @@ const StaffChat: React.FC = () => {
         .from('chat_messages')
         .select(`
           *,
+<<<<<<< HEAD
           user:profiles!chat_messages_user_id_fkey(full_name)
+=======
+          profiles:user_id(full_name)
+>>>>>>> 4974272baafc74e145948f44f7ec8b4349f194f0
         `)
         .or(`user_id.eq.${userId},staff_id.eq.${userId}`)
         .order('created_at', { ascending: true });

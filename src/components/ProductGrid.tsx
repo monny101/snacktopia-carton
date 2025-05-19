@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Loader2, SlidersHorizontal, Package } from 'lucide-react';
 import ProductCard from '@/components/ProductCard';
@@ -18,13 +19,15 @@ interface ProductGridProps {
   filteredProducts: Product[];
   getCategoryName: (subcategoryId: string) => string;
   getSubcategoryName: (subcategoryId: string) => string;
+  productImages?: Record<string, string[]>;
 }
 
 const ProductGrid: React.FC<ProductGridProps> = ({ 
   loading, 
   filteredProducts,
   getCategoryName,
-  getSubcategoryName
+  getSubcategoryName,
+  productImages = {}
 }) => {
   if (loading) {
     return (
@@ -71,6 +74,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
             name: product.name,
             price: product.price,
             image: product.image_url || 'https://placehold.co/400x300?text=No+Image',
+            images: productImages[product.id] || [],
             description: product.description || '',
             category: getCategoryName(product.subcategory_id || ''),
             subcategory: getSubcategoryName(product.subcategory_id || '')

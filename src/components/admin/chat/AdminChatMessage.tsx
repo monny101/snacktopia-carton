@@ -4,8 +4,8 @@ import type { Database } from '@/integrations/supabase/types';
 
 type ChatMessage = Database['public']['Tables']['chat_messages']['Row'] & {
   profiles?: {
-    full_name: string;
-  };
+    full_name: string | null;
+  } | null;
 };
 
 interface DateHeaderProps {
