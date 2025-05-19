@@ -36,11 +36,11 @@ interface Order {
   delivery_type: 'delivery' | 'pickup';
   created_at: string;
   updated_at: string;
-  profiles: {
-    full_name: string;
-    phone: string;
+  profiles?: {
+    full_name: string | null;
+    phone: string | null;
   } | null;
-  addresses: {
+  addresses?: {
     address_line: string;
     city: string;
     state: string;
@@ -90,8 +90,8 @@ const AdminOrders: React.FC = () => {
           .from('orders')
           .select(`
             *,
-            profiles:user_id(full_name, phone),
-            addresses:address_id(address_line, city, state)
+            profiles (full_name, phone),
+            addresses (address_line, city, state)
           `)
           .order(sortField, { ascending: sortDirection === 'asc' });
         
@@ -102,7 +102,12 @@ const AdminOrders: React.FC = () => {
         
         console.log("Orders fetched:", data);
         if (data) {
-          setOrders(data as unknown as Order[]);
+          // Convert the status string to the correct enum type
+          const typedOrders: Order[] = data.map(order => ({
+            ...order,
+            status: order.status as 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
+          }));
+          setOrders(typedOrders);
         } else {
           setOrders([]);
         }
@@ -145,7 +150,7 @@ const AdminOrders: React.FC = () => {
   // Filter orders based on search term
   const filteredOrders = orders.filter(order => {
     const orderIdMatch = order.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const customerNameMatch = order.profiles?.full_name.toLowerCase().includes(searchTerm.toLowerCase());
+    const customerNameMatch = order.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase());
     
     return orderIdMatch || (customerNameMatch || false);
   });
@@ -195,18 +200,29 @@ const AdminOrders: React.FC = () => {
     try {
       const { error } = await supabase
         .from('orders')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .update({ 
+          status: newStatus, 
+          updated_at: new Date().toISOString() 
+        })
         .eq('id', orderId);
       
       if (error) throw error;
       
       // Update local state
       setOrders(orders.map(o => 
-        o.id === orderId ? { ...o, status: newStatus as Order['status'], updated_at: new Date().toISOString() } : o
+        o.id === orderId ? { 
+          ...o, 
+          status: newStatus as Order['status'], 
+          updated_at: new Date().toISOString() 
+        } : o
       ));
       
       if (selectedOrder && selectedOrder.id === orderId) {
-        setSelectedOrder({ ...selectedOrder, status: newStatus as Order['status'], updated_at: new Date().toISOString() });
+        setSelectedOrder({ 
+          ...selectedOrder, 
+          status: newStatus as Order['status'], 
+          updated_at: new Date().toISOString() 
+        });
       }
       
       toast({

@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface ChatUser {
   id: string;
-  full_name: string;
+  full_name: string | null;
   unread: number;
   latest_message?: string;
   latest_message_time?: string;
@@ -61,12 +61,12 @@ const UserList: React.FC<UserListProps> = ({
               <div className="flex items-center">
                 <Avatar className="h-10 w-10 mr-3">
                   <AvatarFallback className="bg-blue-100 text-blue-600">
-                    {chatUser.full_name.charAt(0).toUpperCase()}
+                    {chatUser.full_name ? chatUser.full_name.charAt(0).toUpperCase() : '?'}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-center">
-                    <h3 className="font-medium truncate">{chatUser.full_name}</h3>
+                    <h3 className="font-medium truncate">{chatUser.full_name || 'Unknown User'}</h3>
                     {chatUser.latest_message_time && (
                       <span className="text-xs text-gray-500">
                         {formatTime(chatUser.latest_message_time)}

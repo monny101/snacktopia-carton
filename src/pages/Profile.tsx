@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -22,6 +21,15 @@ interface Order {
   created_at: string;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   total_amount: number;
+  profiles?: {
+    full_name: string | null;
+    phone: string | null;
+  } | null;
+  addresses?: {
+    address_line: string;
+    city: string;
+    state: string;
+  } | null;
 }
 
 // Mock data for addresses since we're only focusing on orders
@@ -83,7 +91,12 @@ const Profile: React.FC = () => {
           }
           
           if (data) {
-            setOrders(data);
+            // Convert the status string to the correct enum type
+            const typedOrders: Order[] = data.map(order => ({
+              ...order,
+              status: order.status as 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
+            }));
+            setOrders(typedOrders);
           }
         } catch (error) {
           console.error('Error fetching orders:', error);
