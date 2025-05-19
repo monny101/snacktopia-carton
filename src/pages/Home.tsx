@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,10 +6,8 @@ import HeroCarousel from '@/components/HeroCarousel';
 import FeaturedProducts from '@/components/FeaturedProducts';
 import Categories from '@/components/Categories';
 import PromoMarquee from '@/components/PromoMarquee';
-
 const Home: React.FC = () => {
-  return (
-    <div className="min-h-screen bg-white">
+  return <div className="min-h-screen bg-white">
       {/* Hero Section with Carousel */}
       <section className="py-10 md:py-12">
         <div className="container mx-auto px-4">
@@ -45,7 +42,7 @@ const Home: React.FC = () => {
       {/* Featured Categories */}
       <section className="py-10 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">Shop By Category</h2>
+          
           <Categories />
           <div className="text-center mt-8">
             <Link to="/products">
@@ -92,8 +89,6 @@ const Home: React.FC = () => {
           </Button>
         </div>
       </section>
-    </div>
-  );
+    </div>;
 };
-
 export default Home;
