@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/auth/AuthContext';
@@ -97,7 +98,7 @@ const CustomerChat: React.FC = () => {
         .from('chat_messages')
         .select(`
           *,
-          staff:profiles!chat_messages_staff_id_fkey(full_name)
+          profiles!chat_messages_staff_id_fkey(full_name)
         `)
         .or(`user_id.eq.${user.id},staff_id.eq.${user.id}`)
         .order('created_at', { ascending: true });
