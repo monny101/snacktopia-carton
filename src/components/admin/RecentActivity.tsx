@@ -11,10 +11,10 @@ interface ChatActivity {
   user_id: string;
   message: string;
   created_at: string;
+  staff_id?: string | null;
   profiles?: {
     full_name: string | null;
   } | null;
-  staff_id?: string | null;
 }
 
 interface OrderActivity {
@@ -179,6 +179,8 @@ const RecentActivity: React.FC = () => {
     <Card className="h-96">
       <CardHeader>
         <CardTitle>Recent Customer Activity</CardTitle>
+      </CardHeader>
+      <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList>
             <TabsTrigger value="all">All Activity</TabsTrigger>
