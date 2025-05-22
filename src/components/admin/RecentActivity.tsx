@@ -39,7 +39,7 @@ const RecentActivity: React.FC = () => {
       setLoading(true);
       try {
         // Fetch recent chat messages
-        // Specify the column to join with explicitly using profiles:user_id()
+        // Fix: Specify the exact join relationship by using profiles(id)
         const { data: chatData, error: chatError } = await supabase
           .from('chat_messages')
           .select(`
@@ -57,6 +57,7 @@ const RecentActivity: React.FC = () => {
         if (chatError) throw chatError;
         
         // Fetch recent orders
+        // Fix: Specify the exact join relationship by using profiles(id)
         const { data: orderData, error: orderError } = await supabase
           .from('orders')
           .select(`
