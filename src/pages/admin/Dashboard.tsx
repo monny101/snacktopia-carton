@@ -156,7 +156,7 @@ const AdminDashboard: React.FC = () => {
           <CardContent>
             <div>
               <p className="text-sm font-medium">
-                <MapPin className="mr-2 inline-block h-4 w-4" /> {profile?.full_name || 'N/A'}
+                <UserCog className="mr-2 inline-block h-4 w-4" /> {profile?.full_name || 'N/A'}
               </p>
               <p className="text-sm font-medium">
                 <Mail className="mr-2 inline-block h-4 w-4" /> {profile?.phone || 'N/A'}
