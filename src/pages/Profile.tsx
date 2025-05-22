@@ -21,6 +21,7 @@ interface Order {
   created_at: string;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   total_amount: number;
+  tracking_number?: string | null;
   profiles?: {
     full_name: string | null;
     phone: string | null;
@@ -80,6 +81,8 @@ const Profile: React.FC = () => {
       const fetchOrders = async () => {
         setLoadingOrders(true);
         try {
+          console.log("Fetching orders for user:", user.id);
+          
           const { data, error } = await supabase
             .from('orders')
             .select('*')
@@ -89,6 +92,8 @@ const Profile: React.FC = () => {
           if (error) {
             throw error;
           }
+          
+          console.log("Orders fetched:", data);
           
           if (data) {
             // Convert the status string to the correct enum type
@@ -311,13 +316,16 @@ const Profile: React.FC = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Total
                       </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Tracking
+                      </th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {orders.map(order => (
+                    {orders.map((order) => (
                       <tr key={order.id}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">{order.id.substring(0, 8)}...</div>
@@ -345,12 +353,21 @@ const Profile: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">₦{order.total_amount.toLocaleString()}</div>
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {order.tracking_number || 'Not available'}
+                          </div>
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                           <button 
                             className="text-mondoBlue hover:underline"
                             onClick={() => {
                               // Here we would normally navigate to the order details page
                               console.log(`View details for order ${order.id}`);
+                              toast({
+                                title: "Order Details",
+                                description: `Viewing details for order ${order.id.substring(0, 8)}...`,
+                              });
                             }}
                           >
                             View Details
