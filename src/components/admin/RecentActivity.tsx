@@ -45,9 +45,9 @@ const RecentActivity: React.FC = () => {
             user_id,
             message,
             created_at,
-            profiles:user_id(full_name)
+            profiles:profiles!user_id(full_name)
           `)
-          .eq('staff_id', null) // Only customer-initiated messages
+          .is('staff_id', null) // Only customer-initiated messages
           .order('created_at', { ascending: false })
           .limit(10);
         
@@ -62,7 +62,7 @@ const RecentActivity: React.FC = () => {
             status,
             total_amount,
             created_at,
-            profiles:user_id(full_name)
+            profiles:profiles!user_id(full_name)
           `)
           .order('created_at', { ascending: false })
           .limit(10);
@@ -86,10 +86,10 @@ const RecentActivity: React.FC = () => {
       .on('postgres_changes', 
         { event: 'INSERT', schema: 'public', table: 'chat_messages' }, 
         (payload) => {
-          const newMessage = payload.new as ChatActivity;
+          const newMessage = payload.new as any;
           
           // Only include customer messages (no staff_id)
-          if (!newMessage.staff_id) {
+          if (newMessage.staff_id === null) {
             // Need to fetch the user details
             supabase
               .from('profiles')
@@ -117,7 +117,7 @@ const RecentActivity: React.FC = () => {
       .on('postgres_changes', 
         { event: 'INSERT', schema: 'public', table: 'orders' }, 
         (payload) => {
-          const newOrder = payload.new as OrderActivity;
+          const newOrder = payload.new as any;
           
           // Fetch user details
           supabase
