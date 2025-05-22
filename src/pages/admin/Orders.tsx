@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -32,8 +33,8 @@ interface Order {
   address_id: string | null;
   total_amount: number;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  payment_method: 'cash_on_delivery' | 'pickup';
-  delivery_type: 'delivery' | 'pickup';
+  payment_method: string; // Changed from strict union type to allow any string
+  delivery_type: string; // Changed from strict union to string
   created_at: string;
   updated_at: string;
   profiles?: {
@@ -102,10 +103,12 @@ const AdminOrders: React.FC = () => {
         
         console.log("Orders fetched:", data);
         if (data) {
-          // Convert the status string to the correct enum type
+          // Convert the data to the correct Order type
           const typedOrders: Order[] = data.map(order => ({
             ...order,
-            status: order.status as 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
+            status: order.status as 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled',
+            payment_method: order.payment_method, // Accept any string value
+            delivery_type: order.delivery_type // Accept any string value
           }));
           setOrders(typedOrders);
         } else {

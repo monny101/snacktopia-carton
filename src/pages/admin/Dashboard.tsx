@@ -1,10 +1,10 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserCog, ShoppingBag, Package, Users, MapPin, Mail, Phone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import RecentActivity from '@/components/admin/RecentActivity';
 
 const AdminDashboard: React.FC = () => {
   const [totalProducts, setTotalProducts] = useState(0);
@@ -54,7 +54,10 @@ const AdminDashboard: React.FC = () => {
     // Fetch recent orders (last 5)
     supabase
       .from('orders')
-      .select('*')
+      .select(`
+        *,
+        profiles(full_name)
+      `)
       .order('created_at', { ascending: false })
       .limit(5)
       .then(response => {
@@ -166,20 +169,34 @@ const AdminDashboard: React.FC = () => {
         </Card>
       </div>
 
-      {/* Sales Chart */}
-      <div className="mb-8">
-        <h2 className="text-lg font-semibold mb-2">Sales Performance (Last 7 Days)</h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={salesData}>
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="sales" fill="#8884d8" />
-          </BarChart>
-        </ResponsiveContainer>
+      {/* Main Dashboard Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* Sales Chart - Takes up 2/3 of the space on large screens */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Sales Performance (Last 7 Days)</CardTitle>
+            </CardHeader>
+            <CardContent className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={salesData}>
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="sales" fill="#8884d8" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Activity - Takes up 1/3 of the space on large screens */}
+        <div>
+          <RecentActivity />
+        </div>
       </div>
 
-      {/* Recent Orders */}
+      {/* Recent Orders Table */}
       <div>
         <h2 className="text-lg font-semibold mb-2">Recent Orders</h2>
         <div className="overflow-x-auto">
@@ -190,7 +207,7 @@ const AdminDashboard: React.FC = () => {
                   Order ID
                 </th>
                 <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  User ID
+                  Customer
                 </th>
                 <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Total Amount
@@ -207,13 +224,13 @@ const AdminDashboard: React.FC = () => {
               {recentOrders.map((order: any) => (
                 <tr key={order.id}>
                   <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                    {order.id}
+                    {order.id.substring(0, 8)}...
                   </td>
                   <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                    {order.user_id}
+                    {order.profiles?.full_name || 'Unknown'}
                   </td>
                   <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                    ${order.total_amount}
+                    ₦{order.total_amount.toLocaleString()}
                   </td>
                   <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                     {order.status || 'N/A'}
