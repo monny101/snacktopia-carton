@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
@@ -24,7 +23,7 @@ interface Order {
   tracking_number: string | null;
   profiles?: {
     full_name: string | null;
-  };
+  } | null;
 }
 
 const StaffOrders: React.FC = () => {
@@ -61,7 +60,7 @@ const StaffOrders: React.FC = () => {
         }
         
         console.log("Orders fetched:", data);
-        setOrders(data || []);
+        setOrders(data as Order[] || []);
       } catch (error) {
         console.error('Error fetching orders:', error);
         toast({
@@ -75,6 +74,22 @@ const StaffOrders: React.FC = () => {
     };
     
     fetchOrders();
+    
+    // Set up real-time subscription for orders
+    const orderSubscription = supabase
+      .channel('staff-orders-changes')
+      .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'orders' }, 
+          (payload) => {
+            console.log("Order change detected:", payload);
+            fetchOrders(); // Refetch all orders when changes are detected
+          }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(orderSubscription);
+    };
   }, []);
 
   // Filter orders based on search term
