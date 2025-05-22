@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,7 +39,7 @@ const RecentActivity: React.FC = () => {
       setLoading(true);
       try {
         // Fetch recent chat messages
-        // Explicitly specify which column to use for the join with profiles
+        // Be explicit about which column to use for the join with profiles
         const { data: chatData, error: chatError } = await supabase
           .from('chat_messages')
           .select(`
@@ -56,7 +57,7 @@ const RecentActivity: React.FC = () => {
         if (chatError) throw chatError;
         
         // Fetch recent orders
-        // Explicitly specify which column to use for the join with profiles
+        // Be explicit about which column to use for the join with profiles
         const { data: orderData, error: orderError } = await supabase
           .from('orders')
           .select(`
