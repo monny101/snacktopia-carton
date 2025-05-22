@@ -13,9 +13,7 @@ const Home: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <div className="order-2 lg:order-1">
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-                Quality Cartons and Packaging Solutions
-              </h1>
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">Wholesale Prices, Delivered to Your Door.</h1>
               <p className="text-lg text-gray-600 mb-6">
                 Mondo Carton King provides top-quality packaging materials for businesses of all sizes.
                 From cardboard boxes to specialized packaging, we've got you covered.
