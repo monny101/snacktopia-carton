@@ -39,6 +39,7 @@ const RecentActivity: React.FC = () => {
       setLoading(true);
       try {
         // Fetch recent chat messages
+        // Specify the column to join with explicitly using profiles:user_id()
         const { data: chatData, error: chatError } = await supabase
           .from('chat_messages')
           .select(`
@@ -71,6 +72,7 @@ const RecentActivity: React.FC = () => {
         
         if (orderError) throw orderError;
         
+        // Use type assertion to tell TypeScript the data matches our interface
         setChatActivities(chatData as ChatActivity[]);
         setOrderActivities(orderData as OrderActivity[]);
       } catch (error) {
